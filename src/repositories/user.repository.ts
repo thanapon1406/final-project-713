@@ -33,6 +33,14 @@ export const findUserById = async (userId: number) => {
   });
 };
 
+// ฟังก์ชันหา User โดย National ID
+export const findUserByNationalId = async (nationalId: string) => {
+  return await prisma.user.findUnique({
+    where: { nationalId },
+    include: { constituency: true },
+  });
+};
+
 // ฟังก์ชันอัพเดท Role ของ User
 export const updateUserRole = async (
   userId: number,

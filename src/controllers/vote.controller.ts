@@ -11,7 +11,10 @@ export class VoteController {
    */
   getBallot = async (req: Request, res: Response) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const userIdParam = req.params.userId;
+      const userId = parseInt(
+        Array.isArray(userIdParam) ? userIdParam[0] : userIdParam,
+      );
 
       if (isNaN(userId)) {
         return res.status(400).json({

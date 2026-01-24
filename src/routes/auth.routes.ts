@@ -1,11 +1,16 @@
 // src/routes/auth.routes.ts
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
+import { authenticate } from "../middlewares/auth.middleware";
 
 const router = Router();
 const authController = new AuthController();
 
-// POST /api/auths - Cast or update a auth
+// Public routes (ไม่ต้องล็อกอิน)
 router.post("/register", authController.register);
+router.post("/login", authController.login);
+
+// Protected routes (ต้องล็อกอิน)
+router.get("/me", authenticate, authController.getProfile);
 
 export default router;

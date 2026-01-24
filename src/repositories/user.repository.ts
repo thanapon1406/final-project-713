@@ -24,3 +24,23 @@ export const findConstituencyByLocation = async (
     },
   });
 };
+
+// ฟังก์ชันหา User โดย ID
+export const findUserById = async (userId: number) => {
+  return await prisma.user.findUnique({
+    where: { id: userId },
+    include: { constituency: true },
+  });
+};
+
+// ฟังก์ชันอัพเดท Role ของ User
+export const updateUserRole = async (
+  userId: number,
+  role: Prisma.EnumRoleFieldUpdateOperationsInput | any,
+) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: { role },
+    include: { constituency: true },
+  });
+};

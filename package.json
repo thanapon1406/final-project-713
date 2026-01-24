@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node dist/app.js",
-    "build": "tsc",
-    "dev": "ts-node src/app.ts",
+    "build": "prisma generate && tsc",
+    "dev": "nodemon",
+    "seed": "tsx prisma/seed.ts",
     "prisma:push": "npx prisma db push",
     "prisma:generate": "npx prisma generate"
   },
@@ -18,7 +19,8 @@
     "@prisma/client": "^7.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

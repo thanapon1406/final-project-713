@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import voteRoutes from "./routes/vote.routes";
 import electionRoutes from "./routes/election.routes";
 import authRoutes from "./routes/auth.routes";
+import adminRoutes from "./routes/admin.routes";
 
 // Import Routes
 
@@ -28,6 +29,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/votes", voteRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/election", electionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 5. Global Error Handling Middleware
 // This catches any errors thrown in your Services/Controllers

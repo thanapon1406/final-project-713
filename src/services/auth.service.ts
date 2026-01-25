@@ -8,8 +8,8 @@ export class AuthService {
    */
   public registerUser = async (
     nationalId: string,
-    name: string,
-    surname: string,
+    firstName: string,
+    lastName: string,
     address: string,
     province: string,
     districtNumber: number,
@@ -21,23 +21,21 @@ export class AuthService {
       throw new Error(`เลขบัตรประชาชน ${nationalId} ถูกใช้งานแล้ว`);
     }
 
-    // 2. หาเขตเลือกตั้งจาก จังหวัด + เขต
+    // 2. หาเขตเลือกตั้งจาก province + districtNumber
     const constituency = await userRepo.findConstituencyByLocation(
       province,
       districtNumber,
     );
 
     if (!constituency) {
-      throw new Error(
-        `ไม่พบเขตเลือกตั้ง: จ.${province} เขตที่ ${districtNumber}`,
-      );
+      throw new Error(`ไม่พบเขตเลือกตั้ง: ${province} เขต ${districtNumber}`);
     }
 
     // 3. สร้าง User โดยผูกกับ constituency.id ที่หาได้
     const user = await userRepo.createUser({
       nationalId,
-      firstName: name,
-      lastName: surname,
+      firstName,
+      lastName,
       address,
       role: $Enums.Role.VOTER, // Default Role
       constituency: {

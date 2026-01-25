@@ -13,17 +13,38 @@ export class AuthController {
   public register = async (req: Request, res: Response) => {
     try {
       // รับค่าจาก Body
-      const { nationalId, name, surname, address, province, districtNumber } =
-        req.body;
+      const {
+        nationalId,
+        firstName,
+        lastName,
+        address,
+        province,
+        districtNumber,
+      } = req.body;
+
+      // Validate required fields
+      if (
+        !nationalId ||
+        !firstName ||
+        !lastName ||
+        !province ||
+        !districtNumber
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "กรุณาระบุข้อมูลให้ครบถ้วน (nationalId, firstName, lastName, province, districtNumber)",
+        });
+      }
 
       // เรียก Service เพื่อทำงาน
       const newUser = await this.authService.registerUser(
         nationalId,
-        name,
-        surname,
+        firstName,
+        lastName,
         address,
         province,
-        districtNumber,
+        parseInt(districtNumber),
       );
 
       // สร้าง JWT Token

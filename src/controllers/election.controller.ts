@@ -216,4 +216,34 @@ export class ElectionController {
       });
     }
   };
+
+  /**
+   * GET /api/election/constituencies
+   * ดูรายการเขตเลือกตั้งทั้งหมด (Public)
+   */
+  getAllConstituencies = async (req: Request, res: Response) => {
+    try {
+      const { province } = req.query;
+
+      let constituencies;
+      if (province && typeof province === "string") {
+        // ถ้ามีระบุจังหวัด ให้กรองตามจังหวัด
+        constituencies =
+          await this.electionService.getConstituenciesByProvince(province);
+      } else {
+        // ถ้าไม่มี ให้แสดงทั้งหมด
+        constituencies = await this.electionService.getAllConstituencies();
+      }
+
+      res.status(200).json({
+        success: true,
+        data: constituencies,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
 }

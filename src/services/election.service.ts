@@ -141,6 +141,23 @@ export class ElectionService {
     return updated;
   };
 
+  /**
+   * ดึงรายการเขตเลือกตั้งทั้งหมด
+   */
+  public getAllConstituencies = async () => {
+    return await electionRepo.findAllConstituencies();
+  };
+
+  /**
+   * ดึงรายการเขตเลือกตั้งตามจังหวัด
+   */
+  public getConstituenciesByProvince = async (province: string) => {
+    if (!province) {
+      throw new Error("กรุณาระบุชื่อจังหวัด");
+    }
+    return await electionRepo.findConstituenciesByProvince(province);
+  };
+
   // ==================== PUBLIC RESULTS ====================
 
   /**

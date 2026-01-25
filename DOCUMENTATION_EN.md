@@ -120,13 +120,32 @@ npx prisma generate
 npx prisma migrate dev --name init
 ```
 
-#### 6. Start Development Server
+#### 6. Seed Admin User (Optional)
+
+```bash
+npm run seed
+```
+
+**Admin Credentials:**
+
+- National ID: `0000000000000`
+- Role: `ADMIN`
+- Use for login and system management
+
+#### 7. Start Development Server
 
 ```bash
 npm run dev
 ```
 
 Server will run at `http://localhost:3000`
+
+**📚 Interactive API Documentation (Swagger):**
+
+- Swagger UI: `http://localhost:3000/api-docs`
+- Test all endpoints directly from your browser
+- Complete API schemas and examples
+- JWT authentication support
 
 ---
 
@@ -216,8 +235,8 @@ curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "nationalId": "1234567890123",
-    "name": "John",
-    "surname": "Doe",
+    "firstName": "John",
+    "lastName": "Doe",
     "address": "123 Main Street",
     "province": "Bangkok",
     "districtNumber": 1
@@ -272,6 +291,7 @@ curl http://localhost:3000/api/votes/ballot/1 \
 | POST   | `/api/votes`                     | VOTER      | Cast vote           |
 | GET    | `/api/election/constituency/:id` | Public     | View results        |
 | GET    | `/api/election/party-overview`   | Public     | View party overview |
+| GET    | `/api/election/constituencies`   | Public     | List constituencies |
 
 ### 🔐 Authentication Endpoints
 
@@ -284,13 +304,15 @@ curl http://localhost:3000/api/votes/ballot/1 \
 ```json
 {
   "nationalId": "1234567890123",
-  "name": "John",
-  "surname": "Doe",
+  "firstName": "John",
+  "lastName": "Doe",
   "address": "123 Main Street",
   "province": "Bangkok",
   "districtNumber": 1
 }
 ```
+
+**Note:** The system will automatically find the constituency based on `province` + `districtNumber`
 
 **Response (201):**
 
@@ -565,6 +587,52 @@ Authorization: Bearer <token>
 }
 ```
 
+#### 3. View All Constituencies
+
+**GET** `/api/election/constituencies`
+
+**Query Parameters (Optional):**
+
+- `province` - Filter by province name (e.g., `?province=Bangkok`)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "province": "Bangkok",
+      "districtNumber": 1,
+      "isClosed": false
+    },
+    {
+      "id": 2,
+      "province": "Bangkok",
+      "districtNumber": 2,
+      "isClosed": true
+    },
+    {
+      "id": 3,
+      "province": "Chiang Mai",
+      "districtNumber": 1,
+      "isClosed": false
+    }
+  ]
+}
+```
+
+**Usage Examples:**
+
+```bash
+# Get all constituencies
+curl http://localhost:3000/api/election/constituencies
+
+# Filter by province
+curl "http://localhost:3000/api/election/constituencies?province=Bangkok"
+```
+
 ---
 
 ## Testing Guide
@@ -592,9 +660,9 @@ curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "nationalId": "1111111111111",
-    "name": "Test",
-    "surname": "User",
-    "address": "123",
+    "firstName": "Test",
+    "lastName": "User",
+    "address": "123 Main St",
     "province": "Bangkok",
     "districtNumber": 1
   }'

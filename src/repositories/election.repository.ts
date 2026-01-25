@@ -28,6 +28,21 @@ export const closeConstituency = async (id: number) => {
   });
 };
 
+// ดึงรายการเขตเลือกตั้งทั้งหมด
+export const findAllConstituencies = async () => {
+  return await prisma.constituency.findMany({
+    orderBy: [{ province: "asc" }, { districtNumber: "asc" }],
+  });
+};
+
+// ดึงรายการเขตเลือกตั้งตามจังหวัด
+export const findConstituenciesByProvince = async (province: string) => {
+  return await prisma.constituency.findMany({
+    where: { province },
+    orderBy: { districtNumber: "asc" },
+  });
+};
+
 // ==================== PARTY ====================
 
 // สร้างพรรคการเมืองใหม่

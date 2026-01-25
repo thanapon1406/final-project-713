@@ -120,13 +120,32 @@ npx prisma generate
 npx prisma migrate dev --name init
 ```
 
-#### 6. เริ่ม Development Server
+#### 6. Seed Admin User (Optional)
+
+```bash
+npm run seed
+```
+
+**Admin Credentials:**
+
+- National ID: `0000000000000`
+- Role: `ADMIN`
+- ใช้สำหรับ login และจัดการระบบ
+
+#### 7. เริ่ม Development Server
 
 ```bash
 npm run dev
 ```
 
 เซิร์ฟเวอร์จะทำงานที่ `http://localhost:3000`
+
+**📚 เอกสาร API แบบ Interactive (Swagger):**
+
+- Swagger UI: `http://localhost:3000/api-docs`
+- ทดสอบ API ทั้งหมดได้โดยตรงจากเบราว์เซอร์
+- มี Schema และตัวอย่างครบถ้วน
+- รองรับ JWT authentication
 
 ---
 
@@ -216,8 +235,8 @@ curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "nationalId": "1234567890123",
-    "name": "สมชาย",
-    "surname": "ใจดี",
+    "firstName": "สมชาย",
+    "lastName": "ใจดี",
     "address": "123 ถนนสุขุมวิท",
     "province": "Bangkok",
     "districtNumber": 1
@@ -272,6 +291,7 @@ curl http://localhost:3000/api/votes/ballot/1 \
 | POST   | `/api/votes`                     | VOTER  | ลงคะแนนเสียง        |
 | GET    | `/api/election/constituency/:id` | Public | ดูผลเขต             |
 | GET    | `/api/election/party-overview`   | Public | ดูภาพรวมพรรค        |
+| GET    | `/api/election/constituencies`   | Public | ดูรายการเขตทั้งหมด  |
 
 ### 🔐 Authentication Endpoints
 
@@ -284,13 +304,15 @@ curl http://localhost:3000/api/votes/ballot/1 \
 ```json
 {
   "nationalId": "1234567890123",
-  "name": "สมชาย",
-  "surname": "ใจดี",
+  "firstName": "สมชาย",
+  "lastName": "ใจดี",
   "address": "123 ถนนสุขุมวิท",
   "province": "Bangkok",
   "districtNumber": 1
 }
 ```
+
+**หมายเหตุ:** ระบบจะค้นหาเขตเลือกตั้งจาก `province` + `districtNumber` อัตโนมัติ
 
 **Response (201):**
 
@@ -565,6 +587,52 @@ Authorization: Bearer <token>
 }
 ```
 
+#### 3. ดูรายการเขตเลือกตั้ง
+
+**GET** `/api/election/constituencies`
+
+**Query Parameters (Optional):**
+
+- `province` - กรองตามชื่อจังหวัด (เช่น `?province=Bangkok`)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "province": "Bangkok",
+      "districtNumber": 1,
+      "isClosed": false
+    },
+    {
+      "id": 2,
+      "province": "Bangkok",
+      "districtNumber": 2,
+      "isClosed": true
+    },
+    {
+      "id": 3,
+      "province": "Chiang Mai",
+      "districtNumber": 1,
+      "isClosed": false
+    }
+  ]
+}
+```
+
+**ตัวอย่างการใช้งาน:**
+
+```bash
+# ดูเขตทั้งหมด
+curl http://localhost:3000/api/election/constituencies
+
+# ดูเขตในกรุงเทพเท่านั้น
+curl "http://localhost:3000/api/election/constituencies?province=Bangkok"
+```
+
 ---
 
 ## คู่มือการทดสอบ
@@ -592,9 +660,9 @@ curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "nationalId": "1111111111111",
-    "name": "ผู้ทดสอบ",
-    "surname": "หนึ่ง",
-    "address": "123",
+    "firstName": "ผู้ทดสอบ",
+    "lastName": "หนึ่ง",
+    "address": "123 ถนนสุขุมวิท",
     "province": "Bangkok",
     "districtNumber": 1
   }'

@@ -693,7 +693,7 @@ curl -X POST http://localhost:3000/api/votes \
 # 1. Login ด้วย Admin account
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"nationalId": "9999999999999"}'
+  -d '{"nationalId": "0000000000000"}'
 
 ADMIN_TOKEN="..."
 
@@ -929,7 +929,7 @@ model Vote {
 - **Repositories:** 3 ไฟล์
 - **Routes:** 4 ไฟล์
 - **Middlewares:** 2 ไฟล์
-- **API Endpoints:** 12 endpoints
+- **API Endpoints:** 13 endpoints
 - **Database Models:** 5 models
 
 ---
@@ -944,6 +944,7 @@ model Vote {
 - ✅ Protected routes
 - ✅ Input validation
 - ✅ Error messages ที่เหมาะสม
+- ✅ ตรวจสอบตัวตนผู้ลงคะแนน (ป้องกันการลงคะแนนแทนผู้อื่น)
 
 ### ควรเพิ่มใน Production
 

@@ -6,45 +6,6 @@ import { authorize } from "../middlewares/role.middleware";
 const router = Router();
 const electionController = new ElectionController();
 
-// --- ADMIN SETUP ---
-
-/**
- * @swagger
- * /api/election/constituency:
- *   post:
- *     summary: Create a new constituency (Admin only)
- *     tags: [Election]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - province
- *               - districtNumber
- *             properties:
- *               province:
- *                 type: string
- *                 example: "Bangkok"
- *               districtNumber:
- *                 type: integer
- *                 example: 1
- *     responses:
- *       201:
- *         description: Constituency created successfully
- *       403:
- *         description: Forbidden - Admin role required
- */
-router.post(
-  "/constituency",
-  authenticate,
-  authorize("ADMIN"),
-  electionController.createConstituency,
-);
-
 // --- EC SETUP ---
 
 /**

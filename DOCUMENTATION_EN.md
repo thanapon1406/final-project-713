@@ -693,7 +693,7 @@ curl -X POST http://localhost:3000/api/votes \
 # 1. Login with Admin account
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"nationalId": "9999999999999"}'
+  -d '{"nationalId": "0000000000000"}'
 
 ADMIN_TOKEN="..."
 
@@ -929,7 +929,7 @@ model Vote {
 - **Repositories:** 3 files
 - **Routes:** 4 files
 - **Middlewares:** 2 files
-- **API Endpoints:** 12 endpoints
+- **API Endpoints:** 13 endpoints
 - **Database Models:** 5 models
 
 ---
@@ -944,6 +944,7 @@ model Vote {
 - ✅ Protected routes
 - ✅ Input validation
 - ✅ Appropriate error messages
+- ✅ Vote identity verification (prevents voting on behalf of others)
 
 ### Should Add for Production
 

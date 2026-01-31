@@ -1,54 +1,57 @@
-// src/repositories/userRepository.ts
+// src/repositories/user.repository.ts
 import { Prisma } from "../generated/prisma";
 import { prisma } from "../lib/prisma";
 
-// ฟังก์ชันสร้าง User
-export const createUser = async (data: Prisma.UserCreateInput) => {
+/**
+ * Create a new user
+ */
+export const create = async (data: Prisma.UserCreateInput) => {
   return await prisma.user.create({
     data,
-    include: { constituency: true }, // ให้ Return ข้อมูลเขตกลับมาด้วย
-  });
-};
-
-// ฟังก์ชันหาเขตเลือกตั้ง
-export const findConstituencyByLocation = async (
-  province: string,
-  districtNumber: number,
-) => {
-  return await prisma.constituency.findUnique({
-    where: {
-      province_districtNumber: {
-        province: province,
-        districtNumber: districtNumber,
-      },
-    },
-  });
-};
-
-// ฟังก์ชันหา User โดย ID
-export const findUserById = async (userId: number) => {
-  return await prisma.user.findUnique({
-    where: { id: userId },
     include: { constituency: true },
   });
 };
 
-// ฟังก์ชันหา User โดย National ID
-export const findUserByNationalId = async (nationalId: string) => {
+/**
+ * Find user by ID
+ */
+export const findById = async (id: number) => {
+  return await prisma.user.findUnique({
+    where: { id },
+    include: { constituency: true },
+  });
+};
+
+/**
+ * Find user by National ID
+ */
+export const findByNationalId = async (nationalId: string) => {
   return await prisma.user.findUnique({
     where: { nationalId },
     include: { constituency: true },
   });
 };
 
-// ฟังก์ชันอัพเดท Role ของ User
-export const updateUserRole = async (
-  userId: number,
+/**
+ * Update user role
+ */
+export const updateRole = async (
+  id: number,
   role: Prisma.EnumRoleFieldUpdateOperationsInput | any,
 ) => {
   return await prisma.user.update({
-    where: { id: userId },
+    where: { id },
     data: { role },
     include: { constituency: true },
+  });
+};
+
+/**
+ * Get all users (for admin)
+ */
+export const findAll = async () => {
+  return await prisma.user.findMany({
+    include: { constituency: true },
+    orderBy: { id: "asc" },
   });
 };

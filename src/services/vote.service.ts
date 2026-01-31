@@ -1,16 +1,14 @@
 // src/services/vote.service.ts
 import * as voteRepo from "../repositories/vote.repository";
 import * as userRepo from "../repositories/user.repository";
-import * as electionRepo from "../repositories/election.repository";
+import * as candidateRepo from "../repositories/candidate.repository";
 
 export class VoteService {
   /**
    * ดูบัตรเลือกตั้ง (Get Ballot)
-   * - แสดงรายชื่อผู้สมัครในเขตของผู้ใช้
    */
   public getBallot = async (userId: number) => {
-    // 1. หาข้อมูลผู้ใช้
-    const user = await userRepo.findUserById(userId);
+    const user = await userRepo.findById(userId);
 
     if (!user) {
       throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
@@ -20,12 +18,10 @@ export class VoteService {
       throw new Error(`ผู้ใช้ยังไม่ได้ลงทะเบียนในเขตเลือกตั้ง`);
     }
 
-    // 2. ดึงผู้สมัครทั้งหมดในเขตนั้น
-    const candidates = await electionRepo.findCandidatesByConstituency(
+    const candidates = await candidateRepo.findByConstituency(
       user.constituencyId,
     );
 
-    // 3. แปลงข้อมูลเป็นรูปแบบบัตรเลือกตั้ง
     const ballot = candidates.map((candidate) => ({
       id: candidate.id,
       candidateNumber: candidate.candidateNumber,
@@ -54,13 +50,9 @@ export class VoteService {
 
   /**
    * ลงคะแนนเสียง (Cast Vote)
-   * - ตรวจสอบว่าเขตปิดแล้วหรือยัง
-   * - ตรวจสอบว่าผู้สมัครอยู่ในเขตเดียวกับผู้ใช้
-   * - ใช้ upsert เพื่ออนุญาตให้เปลี่ยนคะแนนได้ถ้ายังไม่ปิด
    */
   public castVote = async (userId: number, candidateId: number) => {
-    // 1. หาข้อมูลผู้ใช้
-    const user = await userRepo.findUserById(userId);
+    const user = await userRepo.findById(userId);
 
     if (!user) {
       throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
@@ -70,26 +62,22 @@ export class VoteService {
       throw new Error(`ผู้ใช้ยังไม่ได้ลงทะเบียนในเขตเลือกตั้ง`);
     }
 
-    // 2. ตรวจสอบว่าเขตปิดแล้วหรือยัง
     if (user.constituency.isClosed) {
       throw new Error(
         `การลงคะแนนในเขต ${user.constituency.province} เขตที่ ${user.constituency.districtNumber} ปิดแล้ว`,
       );
     }
 
-    // 3. หาข้อมูลผู้สมัคร
-    const candidate = await electionRepo.findCandidateById(candidateId);
+    const candidate = await candidateRepo.findById(candidateId);
 
     if (!candidate) {
       throw new Error(`ไม่พบผู้สมัคร ID: ${candidateId}`);
     }
 
-    // 4. ตรวจสอบว่าผู้สมัครอยู่ในเขตเดียวกับผู้ใช้
     if (candidate.constituencyId !== user.constituencyId) {
       throw new Error(`ผู้สมัครนี้ไม่ได้อยู่ในเขตเลือกตั้งของคุณ`);
     }
 
-    // 5. บันทึกหรืออัพเดทคะแนนเสียง
     const vote = await voteRepo.upsertVote(userId, candidateId);
 
     return {

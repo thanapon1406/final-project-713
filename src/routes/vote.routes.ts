@@ -7,23 +7,15 @@ import { authorize } from "../middlewares/role.middleware";
 const router = Router();
 const voteController = new VoteController();
 
-// ทุก route ต้องล็อกอินและเป็น VOTER เท่านั้น
-
 /**
  * @swagger
- * /api/votes/ballot/{userId}:
+ * /api/votes/ballot:
  *   get:
- *     summary: Get ballot (list of candidates) for a specific user
+ *     summary: Get ballot (list of candidates) for the logged-in user
+ *     description: Returns the ballot for the user's constituency. User ID is taken from the JWT token.
  *     tags: [Vote]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: integer
- *         description: User ID to get ballot for
  *     responses:
  *       200:
  *         description: Ballot retrieved successfully
@@ -47,22 +39,30 @@ const voteController = new VoteController();
  *                         properties:
  *                           id:
  *                             type: integer
- *                           name:
+ *                           candidateNumber:
+ *                             type: integer
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
  *                             type: string
  *                           party:
  *                             type: object
  *                             properties:
+ *                               id:
+ *                                 type: integer
  *                               name:
  *                                 type: string
  *       400:
  *         description: User not found or not assigned to a constituency
+ *       401:
+ *         description: Unauthorized - Please login
  *       403:
- *         description: Forbidden - Voter role required
+ *         description: Forbidden - VOTER or EC role required
  */
 router.get(
-  "/ballot/:userId",
+  "/ballot",
   authenticate,
-  authorize("VOTER"),
+  authorize("VOTER", "EC"),
   voteController.getBallot,
 );
 
@@ -71,7 +71,7 @@ router.get(
  * /api/votes:
  *   post:
  *     summary: Cast or update a vote
- *     description: Allows a voter to cast a vote or change their existing vote (if constituency is still open)
+ *     description: Allows a voter or EC to cast a vote or change their existing vote (if constituency is still open). User ID is taken from the JWT token.
  *     tags: [Vote]
  *     security:
  *       - bearerAuth: []
@@ -82,15 +82,12 @@ router.get(
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - candidateId
  *             properties:
- *               userId:
- *                 type: integer
- *                 example: 1
  *               candidateId:
  *                 type: integer
  *                 example: 1
+ *                 description: The ID of the candidate to vote for
  *     responses:
  *       200:
  *         description: Vote cast or updated successfully
@@ -109,9 +106,11 @@ router.get(
  *                   $ref: '#/components/schemas/Vote'
  *       400:
  *         description: Invalid input, constituency closed, or candidate not in user's constituency
+ *       401:
+ *         description: Unauthorized - Please login
  *       403:
- *         description: Forbidden - Voter role required
+ *         description: Forbidden - VOTER or EC role required
  */
-router.post("/", authenticate, authorize("VOTER"), voteController.vote);
+router.post("/", authenticate, authorize("VOTER", "EC"), voteController.vote);
 
 export default router;

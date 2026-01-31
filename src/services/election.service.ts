@@ -1,65 +1,10 @@
 // src/services/election.service.ts
-import { $Enums } from "../generated/prisma";
-import * as electionRepo from "../repositories/election.repository";
 import * as userRepo from "../repositories/user.repository";
-import { prisma } from "../lib/prisma";
+import * as constituencyRepo from "../repositories/constituency.repository";
+import * as partyRepo from "../repositories/party.repository";
+import * as candidateRepo from "../repositories/candidate.repository";
 
 export class ElectionService {
-  // ==================== ADMIN FEATURES ====================
-
-  /**
-   * สร้างเขตเลือกตั้งใหม่ (Admin only)
-   */
-  public createConstituency = async (
-    province: string,
-    districtNumber: number,
-  ) => {
-    // ตรวจสอบว่ามีเขตนี้อยู่แล้วหรือไม่
-    const existing = await userRepo.findConstituencyByLocation(
-      province,
-      districtNumber,
-    );
-
-    if (existing) {
-      throw new Error(
-        `เขตเลือกตั้ง ${province} เขตที่ ${districtNumber} มีอยู่แล้ว`,
-      );
-    }
-
-    const constituency = await electionRepo.createConstituency({
-      province,
-      districtNumber,
-      isClosed: false,
-    });
-
-    return constituency;
-  };
-
-  /**
-   * เปลี่ยน Role ของ User จาก Voter เป็น EC (Admin only)
-   */
-  public promoteUserToEC = async (userId: number) => {
-    const user = await userRepo.findUserById(userId);
-
-    if (!user) {
-      throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
-    }
-
-    if (user.role === $Enums.Role.EC) {
-      throw new Error(`ผู้ใช้นี้เป็น EC อยู่แล้ว`);
-    }
-
-    if (user.role === $Enums.Role.ADMIN) {
-      throw new Error(`ไม่สามารถเปลี่ยน Admin เป็น EC ได้`);
-    }
-
-    const updatedUser = await userRepo.updateUserRole(userId, $Enums.Role.EC);
-
-    return updatedUser;
-  };
-
-  // ==================== EC FEATURES ====================
-
   /**
    * สร้างพรรคการเมืองใหม่ (EC only)
    */
@@ -68,13 +13,7 @@ export class ElectionService {
     logoUrl?: string,
     policy?: string,
   ) => {
-    const party = await electionRepo.createParty({
-      name,
-      logoUrl,
-      policy,
-    });
-
-    return party;
+    return await partyRepo.create({ name, logoUrl, policy });
   };
 
   /**
@@ -91,58 +30,45 @@ export class ElectionService {
     constituencyId: number,
     userId: number,
   ) => {
-    // 1. ตรวจสอบว่า user มีอยู่จริง
-    const user = await userRepo.findUserById(userId);
+    const user = await userRepo.findById(userId);
     if (!user) {
       throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
     }
 
-    // 2. ตรวจสอบว่า user อาศัยอยู่ในเขตเลือกตั้งนั้น
     if (user.constituencyId !== constituencyId) {
-      throw new Error(`ผู้ใช้ไม่ได้อาศัยอยู่ในเขตเลือกตั้ง ID: ${constituencyId} ไม่สามารถลงสมัครในเขตนี้ได้`);
+      throw new Error(
+        `ผู้ใช้ไม่ได้อาศัยอยู่ในเขตเลือกตั้ง ID: ${constituencyId} ไม่สามารถลงสมัครในเขตนี้ได้`,
+      );
     }
 
-    // 3. ตรวจสอบว่าพรรคมีอยู่จริง
-    const party = await electionRepo.findPartyById(partyId);
+    const party = await partyRepo.findById(partyId);
     if (!party) {
       throw new Error(`ไม่พบพรรค ID: ${partyId}`);
     }
 
-    // 4. ตรวจสอบว่าเขตเลือกตั้งมีอยู่จริง
-    const constituency =
-      await electionRepo.findConstituencyById(constituencyId);
+    const constituency = await constituencyRepo.findById(constituencyId);
     if (!constituency) {
       throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${constituencyId}`);
     }
 
-    // 5. สร้างผู้สมัคร
-    const candidate = await electionRepo.createCandidate({
+    return await candidateRepo.create({
       candidateNumber,
       title,
       firstName,
       lastName,
       imageUrl,
       policy,
-      user: {
-        connect: { id: userId },
-      },
-      party: {
-        connect: { id: partyId },
-      },
-      constituency: {
-        connect: { id: constituencyId },
-      },
+      user: { connect: { id: userId } },
+      party: { connect: { id: partyId } },
+      constituency: { connect: { id: constituencyId } },
     });
-
-    return candidate;
   };
 
   /**
    * ปิดการลงคะแนนในเขต (EC only)
    */
   public closePoll = async (constituencyId: number) => {
-    const constituency =
-      await electionRepo.findConstituencyById(constituencyId);
+    const constituency = await constituencyRepo.findById(constituencyId);
 
     if (!constituency) {
       throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${constituencyId}`);
@@ -152,15 +78,14 @@ export class ElectionService {
       throw new Error(`เขตเลือกตั้งนี้ปิดการลงคะแนนไปแล้ว`);
     }
 
-    const updated = await electionRepo.closeConstituency(constituencyId);
-    return updated;
+    return await constituencyRepo.close(constituencyId);
   };
 
   /**
    * ดึงรายการเขตเลือกตั้งทั้งหมด
    */
   public getAllConstituencies = async () => {
-    return await electionRepo.findAllConstituencies();
+    return await constituencyRepo.findAll();
   };
 
   /**
@@ -170,43 +95,34 @@ export class ElectionService {
     if (!province) {
       throw new Error("กรุณาระบุชื่อจังหวัด");
     }
-    return await electionRepo.findConstituenciesByProvince(province);
+    return await constituencyRepo.findByProvince(province);
   };
-
-  // ==================== PUBLIC RESULTS ====================
 
   /**
    * ดูผลการเลือกตั้งในเขต
-   * - ถ้าเปิดอยู่: แสดงรายชื่อผู้สมัคร แต่ซ่อนคะแนน
-   * - ถ้าปิดแล้ว: แสดงรายชื่อผู้สมัครพร้อมคะแนน
    */
   public getConstituencyResults = async (constituencyId: number) => {
-    const data = await electionRepo.getConstituencyResults(constituencyId);
+    const data = await constituencyRepo.findWithResults(constituencyId);
 
     if (!data) {
       throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${constituencyId}`);
     }
 
-    const candidatesWithVotes = data.candidates.map((candidate) => {
-      const voteCount = candidate.votes.length;
-
-      return {
-        id: candidate.id,
-        candidateNumber: candidate.candidateNumber,
-        title: candidate.title,
-        firstName: candidate.firstName,
-        lastName: candidate.lastName,
-        imageUrl: candidate.imageUrl,
-        policy: candidate.policy,
-        party: {
-          id: candidate.party.id,
-          name: candidate.party.name,
-          logoUrl: candidate.party.logoUrl,
-        },
-        // ถ้าเปิดอยู่ให้ซ่อนคะแนน
-        voteCount: data.isClosed ? voteCount : null,
-      };
-    });
+    const candidatesWithVotes = data.candidates.map((candidate) => ({
+      id: candidate.id,
+      candidateNumber: candidate.candidateNumber,
+      title: candidate.title,
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+      imageUrl: candidate.imageUrl,
+      policy: candidate.policy,
+      party: {
+        id: candidate.party.id,
+        name: candidate.party.name,
+        logoUrl: candidate.party.logoUrl,
+      },
+      voteCount: data.isClosed ? candidate.votes.length : null,
+    }));
 
     return {
       constituency: {
@@ -221,70 +137,48 @@ export class ElectionService {
 
   /**
    * ดูภาพรวมพรรคทั้งหมด พร้อมจำนวน MPs
-   * - นับเฉพาะเขตที่ปิดแล้ว
-   * - แต่ละเขตเอาคนที่ได้คะแนนสูงสุด
    */
   public getPartyOverview = async () => {
-    // ดึงพรรคทั้งหมด
-    const parties = await prisma.party.findMany({
-      include: {
-        candidates: {
-          include: {
-            constituency: true,
-            votes: true,
-          },
-        },
-      },
-    });
+    const parties = await partyRepo.findAllWithCandidates();
+    const allConstituencies = await constituencyRepo.findAll();
+    const closedConstituencyIds = allConstituencies
+      .filter((c) => c.isClosed)
+      .map((c) => c.id);
 
-    // สำหรับแต่ละพรรค คำนวณจำนวน MPs
-    const partiesWithMPs = await Promise.all(
-      parties.map(async (party) => {
-        // หาเขตที่ปิดแล้วทั้งหมด
-        const closedConstituencies = await prisma.constituency.findMany({
-          where: { isClosed: true },
-          include: {
-            candidates: {
-              include: {
-                votes: true,
-                party: true,
-              },
-            },
-          },
-        });
+    // Get closed constituencies with full data
+    const closedConstituenciesData = await Promise.all(
+      closedConstituencyIds.map((id) => constituencyRepo.findWithResults(id)),
+    );
 
-        // นับจำนวนเขตที่พรรคนี้ชนะ
-        let totalElectedMPs = 0;
+    return parties.map((party) => {
+      let totalElectedMPs = 0;
 
-        for (const constituency of closedConstituencies) {
-          // หาผู้สมัครที่ได้คะแนนสูงสุดในเขตนี้
-          let maxVotes = -1;
-          let winnerPartyId = null;
+      for (const constituency of closedConstituenciesData) {
+        if (!constituency) continue;
 
-          for (const candidate of constituency.candidates) {
-            const voteCount = candidate.votes.length;
-            if (voteCount > maxVotes) {
-              maxVotes = voteCount;
-              winnerPartyId = candidate.partyId;
-            }
-          }
+        let maxVotes = -1;
+        let winnerPartyId: number | null = null;
 
-          // ถ้าพรรคนี้ชนะในเขตนี้
-          if (winnerPartyId === party.id) {
-            totalElectedMPs++;
+        for (const candidate of constituency.candidates) {
+          const voteCount = candidate.votes.length;
+          if (voteCount > maxVotes) {
+            maxVotes = voteCount;
+            winnerPartyId = candidate.partyId;
           }
         }
 
-        return {
-          id: party.id,
-          name: party.name,
-          logoUrl: party.logoUrl,
-          policy: party.policy,
-          totalElectedMPs,
-        };
-      }),
-    );
+        if (winnerPartyId === party.id) {
+          totalElectedMPs++;
+        }
+      }
 
-    return partiesWithMPs;
+      return {
+        id: party.id,
+        name: party.name,
+        logoUrl: party.logoUrl,
+        policy: party.policy,
+        totalElectedMPs,
+      };
+    });
   };
 }

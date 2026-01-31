@@ -7,7 +7,40 @@ import { authorize } from "../middlewares/role.middleware";
 const router = Router();
 const adminController = new AdminController();
 
-// ทุก route ใน admin ต้องล็อกอินและเป็น ADMIN เท่านั้น
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Get all users (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin role required
+ */
+router.get(
+  "/users",
+  authenticate,
+  authorize("ADMIN"),
+  adminController.getAllUsers,
+);
 
 /**
  * @swagger

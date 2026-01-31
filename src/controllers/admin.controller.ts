@@ -6,6 +6,26 @@ export class AdminController {
   constructor(private adminService: AdminService = new AdminService()) {}
 
   /**
+   * GET /api/admin/users
+   * Get all users (Admin only)
+   */
+  getAllUsers = async (req: Request, res: Response) => {
+    try {
+      const users = await this.adminService.getAllUsers();
+
+      res.status(200).json({
+        success: true,
+        data: users,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /**
    * POST /api/admin/constituency
    * สร้างเขตเลือกตั้งใหม่ (Admin only)
    */

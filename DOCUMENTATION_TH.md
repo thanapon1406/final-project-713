@@ -277,21 +277,22 @@ curl http://localhost:3000/api/votes/ballot/1 \
 
 ### 📋 สรุป API Endpoints
 
-| Method | Endpoint                         | สิทธิ์ | คำอธิบาย            |
-| ------ | -------------------------------- | ------ | ------------------- |
-| POST   | `/api/auth/register`             | Public | ลงทะเบียนผู้ใช้ใหม่ |
-| POST   | `/api/auth/login`                | Public | เข้าสู่ระบบ         |
-| GET    | `/api/auth/me`                   | Any    | ดูโปรไฟล์ตนเอง      |
-| POST   | `/api/admin/constituency`        | ADMIN  | สร้างเขตเลือกตั้ง   |
-| PATCH  | `/api/admin/promote-ec/:userId`  | ADMIN  | เลื่อนเป็น EC       |
-| POST   | `/api/election/party`            | EC     | สร้างพรรค           |
-| POST   | `/api/election/candidate`        | EC     | เพิ่มผู้สมัคร       |
-| PATCH  | `/api/election/close/:id`        | EC     | ปิดหีบ              |
-| GET    | `/api/votes/ballot/:userId`      | VOTER  | ดูบัตรเลือกตั้ง     |
-| POST   | `/api/votes`                     | VOTER  | ลงคะแนนเสียง        |
-| GET    | `/api/election/constituency/:id` | Public | ดูผลเขต             |
-| GET    | `/api/election/party-overview`   | Public | ดูภาพรวมพรรค        |
-| GET    | `/api/election/constituencies`   | Public | ดูรายการเขตทั้งหมด  |
+| Method | Endpoint                         | สิทธิ์    | คำอธิบาย            |
+| ------ | -------------------------------- | ---------- | ------------------- |
+| POST   | `/api/auth/register`             | Public     | ลงทะเบียนผู้ใช้ใหม่ |
+| POST   | `/api/auth/login`                | Public     | เข้าสู่ระบบ         |
+| GET    | `/api/auth/me`                   | Any        | ดูโปรไฟล์ตนเอง      |
+| GET    | `/api/admin/users`               | ADMIN      | ดูรายชื่อผู้ใช้ทั้งหมด |
+| POST   | `/api/admin/constituency`        | ADMIN      | สร้างเขตเลือกตั้ง   |
+| PATCH  | `/api/admin/promote-ec/:userId`  | ADMIN      | เลื่อนเป็น EC       |
+| POST   | `/api/election/party`            | EC         | สร้างพรรค           |
+| POST   | `/api/election/candidate`        | EC         | เพิ่มผู้สมัคร       |
+| PATCH  | `/api/election/close/:id`        | EC         | ปิดหีบ              |
+| GET    | `/api/votes/ballot`              | VOTER, EC  | ดูบัตรเลือกตั้ง     |
+| POST   | `/api/votes`                     | VOTER, EC  | ลงคะแนนเสียง        |
+| GET    | `/api/election/constituency/:id` | Public     | ดูผลเขต             |
+| GET    | `/api/election/party-overview`   | Public     | ดูภาพรวมพรรค        |
+| GET    | `/api/election/constituencies`   | Public     | ดูรายการเขตทั้งหมด  |
 
 ### 🔐 Authentication Endpoints
 
@@ -465,9 +466,11 @@ Authorization: Bearer <token>
 
 #### 1. ดูบัตรเลือกตั้ง
 
-**GET** `/api/votes/ballot/:userId`
+**GET** `/api/votes/ballot`
 
-**Headers:** `Authorization: Bearer <voter-token>`
+**Headers:** `Authorization: Bearer <token>`
+
+**หมายเหตุ:** User ID จะถูกดึงจาก JWT token โดยอัตโนมัติ ทั้ง VOTER และ EC สามารถเข้าถึงได้
 
 **Response (200):**
 
@@ -503,13 +506,14 @@ Authorization: Bearer <token>
 
 **POST** `/api/votes`
 
-**Headers:** `Authorization: Bearer <voter-token>`
+**Headers:** `Authorization: Bearer <token>`
+
+**หมายเหตุ:** User ID จะถูกดึงจาก JWT token โดยอัตโนมัติ ทั้ง VOTER และ EC สามารถลงคะแนนได้
 
 **Request Body:**
 
 ```json
 {
-  "userId": 1,
   "candidateId": 1
 }
 ```
@@ -674,20 +678,20 @@ curl -X POST http://localhost:3000/api/auth/register \
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 # 2. ดูบัตรเลือกตั้ง
-curl http://localhost:3000/api/votes/ballot/1 \
+curl http://localhost:3000/api/votes/ballot \
   -H "Authorization: Bearer $TOKEN"
 
 # 3. ลงคะแนนเสียง
 curl -X POST http://localhost:3000/api/votes \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"userId": 1, "candidateId": 1}'
+  -d '{"candidateId": 1}'
 
 # 4. เปลี่ยนคะแนนเสียง (ถ้าหีบยังเปิด)
 curl -X POST http://localhost:3000/api/votes \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"userId": 1, "candidateId": 2}'
+  -d '{"candidateId": 2}'
 ```
 
 #### Flow 2: Admin จัดการระบบ
@@ -700,13 +704,17 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 ADMIN_TOKEN="..."
 
-# 2. สร้างเขตเลือกตั้ง
+# 2. ดูรายชื่อผู้ใช้ทั้งหมด
+curl http://localhost:3000/api/admin/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+
+# 3. สร้างเขตเลือกตั้ง
 curl -X POST http://localhost:3000/api/admin/constituency \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"province": "Chiang Mai", "districtNumber": 1}'
 
-# 3. เลื่อนผู้ใช้เป็น EC
+# 4. เลื่อนผู้ใช้เป็น EC
 curl -X PATCH http://localhost:3000/api/admin/promote-ec/5 \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```

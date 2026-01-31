@@ -44,14 +44,16 @@ A comprehensive online election system designed to manage elections across multi
 
 #### 👨‍💼 Admin Features
 
+- View all users in the system
 - Create constituencies (province + district)
 - Promote users to EC (Election Commissioner) role
 
 #### 👔 EC (Election Commissioner) Features
 
 - Create political parties
-- Add candidates (validates party and constituency)
+- Add candidates (validates party, constituency, and residency)
 - Close polls
+- Can also vote like voters
 
 #### 🗳️ Voter Features
 
@@ -277,21 +279,22 @@ curl http://localhost:3000/api/votes/ballot/1 \
 
 ### 📋 API Endpoints Summary
 
-| Method | Endpoint                         | Permission | Description         |
-| ------ | -------------------------------- | ---------- | ------------------- |
-| POST   | `/api/auth/register`             | Public     | Register new user   |
-| POST   | `/api/auth/login`                | Public     | User login          |
-| GET    | `/api/auth/me`                   | Any        | View own profile    |
-| POST   | `/api/admin/constituency`        | ADMIN      | Create constituency |
-| PATCH  | `/api/admin/promote-ec/:userId`  | ADMIN      | Promote to EC       |
-| POST   | `/api/election/party`            | EC         | Create party        |
-| POST   | `/api/election/candidate`        | EC         | Add candidate       |
-| PATCH  | `/api/election/close/:id`        | EC         | Close poll          |
-| GET    | `/api/votes/ballot/:userId`      | VOTER      | View ballot         |
-| POST   | `/api/votes`                     | VOTER      | Cast vote           |
-| GET    | `/api/election/constituency/:id` | Public     | View results        |
-| GET    | `/api/election/party-overview`   | Public     | View party overview |
-| GET    | `/api/election/constituencies`   | Public     | List constituencies |
+| Method | Endpoint                         | Permission   | Description         |
+| ------ | -------------------------------- | ------------ | ------------------- |
+| POST   | `/api/auth/register`             | Public       | Register new user   |
+| POST   | `/api/auth/login`                | Public       | User login          |
+| GET    | `/api/auth/me`                   | Any          | View own profile    |
+| GET    | `/api/admin/users`               | ADMIN        | List all users      |
+| POST   | `/api/admin/constituency`        | ADMIN        | Create constituency |
+| PATCH  | `/api/admin/promote-ec/:userId`  | ADMIN        | Promote to EC       |
+| POST   | `/api/election/party`            | EC           | Create party        |
+| POST   | `/api/election/candidate`        | EC           | Add candidate       |
+| PATCH  | `/api/election/close/:id`        | EC           | Close poll          |
+| GET    | `/api/votes/ballot`              | VOTER, EC    | View ballot         |
+| POST   | `/api/votes`                     | VOTER, EC    | Cast vote           |
+| GET    | `/api/election/constituency/:id` | Public       | View results        |
+| GET    | `/api/election/party-overview`   | Public       | View party overview |
+| GET    | `/api/election/constituencies`   | Public       | List constituencies |
 
 ### 🔐 Authentication Endpoints
 
@@ -465,9 +468,11 @@ Authorization: Bearer <token>
 
 #### 1. View Ballot
 
-**GET** `/api/votes/ballot/:userId`
+**GET** `/api/votes/ballot`
 
-**Headers:** `Authorization: Bearer <voter-token>`
+**Headers:** `Authorization: Bearer <token>`
+
+**Note:** User ID is automatically taken from the JWT token. Both VOTER and EC roles can access.
 
 **Response (200):**
 
@@ -503,13 +508,14 @@ Authorization: Bearer <token>
 
 **POST** `/api/votes`
 
-**Headers:** `Authorization: Bearer <voter-token>`
+**Headers:** `Authorization: Bearer <token>`
+
+**Note:** User ID is automatically taken from the JWT token. Both VOTER and EC roles can vote.
 
 **Request Body:**
 
 ```json
 {
-  "userId": 1,
   "candidateId": 1
 }
 ```
@@ -674,20 +680,20 @@ curl -X POST http://localhost:3000/api/auth/register \
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 # 2. View ballot
-curl http://localhost:3000/api/votes/ballot/1 \
+curl http://localhost:3000/api/votes/ballot \
   -H "Authorization: Bearer $TOKEN"
 
 # 3. Cast vote
 curl -X POST http://localhost:3000/api/votes \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"userId": 1, "candidateId": 1}'
+  -d '{"candidateId": 1}'
 
 # 4. Change vote (if poll still open)
 curl -X POST http://localhost:3000/api/votes \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"userId": 1, "candidateId": 2}'
+  -d '{"candidateId": 2}'
 ```
 
 #### Flow 2: Admin Managing System
@@ -700,13 +706,17 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 ADMIN_TOKEN="..."
 
-# 2. Create constituency
+# 2. List all users
+curl http://localhost:3000/api/admin/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN"
+
+# 3. Create constituency
 curl -X POST http://localhost:3000/api/admin/constituency \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"province": "Chiang Mai", "districtNumber": 1}'
 
-# 3. Promote user to EC
+# 4. Promote user to EC
 curl -X PATCH http://localhost:3000/api/admin/promote-ec/5 \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
@@ -907,19 +917,21 @@ model Vote {
 
 #### A. Admin Features
 
-1. ✅ Create Constituency - validates uniqueness
-2. ✅ Promote User to EC - prevents Admin → EC conversion
+1. ✅ View All Users - list all users in the system
+2. ✅ Create Constituency - validates uniqueness
+3. ✅ Promote User to EC - prevents Admin → EC conversion
 
 #### B. EC Features
 
 1. ✅ Create Political Party
-2. ✅ Add Candidate - validates party and constituency exist
+2. ✅ Add Candidate - validates party, constituency, and user residency
 3. ✅ Close Poll
+4. ✅ Can Vote - EC can also vote like voters
 
 #### C. Voter Features
 
 1. ✅ View Ballot - list of candidates in user's constituency
-2. ✅ Cast Vote - with comprehensive validation
+2. ✅ Cast Vote - with comprehensive validation (userId from token)
 3. ✅ Change Vote (before poll closes)
 
 #### D. Public Features

@@ -1,0 +1,87 @@
+// src/repositories/constituency.repository.ts
+import { Prisma } from "../generated/prisma";
+import { prisma } from "../lib/prisma";
+
+/**
+ * Find constituency by province and district number
+ */
+export const findByLocation = async (
+  province: string,
+  districtNumber: number,
+) => {
+  return await prisma.constituency.findUnique({
+    where: {
+      province_districtNumber: {
+        province,
+        districtNumber,
+      },
+    },
+  });
+};
+
+/**
+ * Find constituency by ID
+ */
+export const findById = async (id: number) => {
+  return await prisma.constituency.findUnique({
+    where: { id },
+  });
+};
+
+/**
+ * Create a new constituency
+ */
+export const create = async (data: Prisma.ConstituencyCreateInput) => {
+  return await prisma.constituency.create({
+    data,
+  });
+};
+
+/**
+ * Close a constituency (stop voting)
+ */
+export const close = async (id: number) => {
+  return await prisma.constituency.update({
+    where: { id },
+    data: { isClosed: true },
+  });
+};
+
+/**
+ * Get all constituencies
+ */
+export const findAll = async () => {
+  return await prisma.constituency.findMany({
+    orderBy: [{ province: "asc" }, { districtNumber: "asc" }],
+  });
+};
+
+/**
+ * Get constituencies by province
+ */
+export const findByProvince = async (province: string) => {
+  return await prisma.constituency.findMany({
+    where: { province },
+    orderBy: { districtNumber: "asc" },
+  });
+};
+
+/**
+ * Get constituency with candidates and votes (for results)
+ */
+export const findWithResults = async (id: number) => {
+  return await prisma.constituency.findUnique({
+    where: { id },
+    include: {
+      candidates: {
+        include: {
+          party: true,
+          votes: true,
+        },
+        orderBy: {
+          candidateNumber: "asc",
+        },
+      },
+    },
+  });
+};

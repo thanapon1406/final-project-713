@@ -1,9 +1,16 @@
 // src/services/admin.service.ts
 import { $Enums } from "../generated/prisma";
 import * as userRepo from "../repositories/user.repository";
-import * as electionRepo from "../repositories/election.repository";
+import * as constituencyRepo from "../repositories/constituency.repository";
 
 export class AdminService {
+  /**
+   * Get all users (Admin only)
+   */
+  public getAllUsers = async () => {
+    return await userRepo.findAll();
+  };
+
   /**
    * สร้างเขตเลือกตั้งใหม่ (Admin only)
    */
@@ -12,7 +19,7 @@ export class AdminService {
     districtNumber: number,
   ) => {
     // ตรวจสอบว่ามีเขตนี้อยู่แล้วหรือไม่
-    const existing = await userRepo.findConstituencyByLocation(
+    const existing = await constituencyRepo.findByLocation(
       province,
       districtNumber,
     );
@@ -23,7 +30,7 @@ export class AdminService {
       );
     }
 
-    const constituency = await electionRepo.createConstituency({
+    const constituency = await constituencyRepo.create({
       province,
       districtNumber,
       isClosed: false,
@@ -36,7 +43,7 @@ export class AdminService {
    * เปลี่ยน Role ของ User จาก Voter เป็น EC (Admin only)
    */
   public promoteUserToEC = async (userId: number) => {
-    const user = await userRepo.findUserById(userId);
+    const user = await userRepo.findById(userId);
 
     if (!user) {
       throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
@@ -50,7 +57,7 @@ export class AdminService {
       throw new Error(`ไม่สามารถเปลี่ยน Admin เป็น EC ได้`);
     }
 
-    const updatedUser = await userRepo.updateUserRole(userId, $Enums.Role.EC);
+    const updatedUser = await userRepo.updateRole(userId, $Enums.Role.EC);
 
     return updatedUser;
   };

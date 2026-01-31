@@ -1,5 +1,5 @@
 // src/controllers/vote.controller.ts
-import { Request, Response } from "express";
+import { Response } from "express";
 import { VoteService } from "../services/vote.service";
 import { AuthRequest } from "../middlewares/auth.middleware";
 
@@ -7,28 +7,17 @@ export class VoteController {
   constructor(private voteService: VoteService = new VoteService()) {}
 
   /**
-   * GET /api/votes/ballot/:userId
-   * ดูบัตรเลือกตั้ง (Get Ballot)
+   * GET /api/votes/ballot
+   * ดูบัตรเลือกตั้ง (Get Ballot) - userId from token
    */
   getBallot = async (req: AuthRequest, res: Response) => {
     try {
-      const userIdParam = req.params.userId;
-      const userId = parseInt(
-        Array.isArray(userIdParam) ? userIdParam[0] : userIdParam,
-      );
+      const userId = req.user?.id;
 
-      if (isNaN(userId)) {
-        return res.status(400).json({
+      if (!userId) {
+        return res.status(401).json({
           success: false,
-          message: "User ID ไม่ถูกต้อง",
-        });
-      }
-
-      // Security: Verify the logged-in user matches the userId in request
-      if (req.user?.id !== userId) {
-        return res.status(403).json({
-          success: false,
-          message: "คุณไม่สามารถดูบัตรเลือกตั้งของผู้อื่นได้",
+          message: "กรุณาล็อกอินเข้าสู่ระบบ",
         });
       }
 
@@ -48,25 +37,24 @@ export class VoteController {
 
   /**
    * POST /api/votes
-   * ลงคะแนนเสียง (Cast Vote)
+   * ลงคะแนนเสียง (Cast Vote) - userId from token
    */
   vote = async (req: AuthRequest, res: Response) => {
     try {
-      const { userId, candidateId } = req.body;
+      const userId = req.user?.id;
+      const { candidateId } = req.body;
 
-      // Validation
-      if (!userId || !candidateId) {
-        return res.status(400).json({
+      if (!userId) {
+        return res.status(401).json({
           success: false,
-          message: "กรุณาระบุ userId และ candidateId",
+          message: "กรุณาล็อกอินเข้าสู่ระบบ",
         });
       }
 
-      // Security: Verify the logged-in user matches the userId in request
-      if (req.user?.id !== userId) {
-        return res.status(403).json({
+      if (!candidateId) {
+        return res.status(400).json({
           success: false,
-          message: "คุณไม่สามารถลงคะแนนแทนผู้อื่นได้",
+          message: "กรุณาระบุ candidateId",
         });
       }
 

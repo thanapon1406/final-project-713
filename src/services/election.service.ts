@@ -89,21 +89,33 @@ export class ElectionService {
     policy: string | null,
     partyId: number,
     constituencyId: number,
+    userId: number,
   ) => {
-    // 1. ตรวจสอบว่าพรรคมีอยู่จริง
+    // 1. ตรวจสอบว่า user มีอยู่จริง
+    const user = await userRepo.findUserById(userId);
+    if (!user) {
+      throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
+    }
+
+    // 2. ตรวจสอบว่า user อาศัยอยู่ในเขตเลือกตั้งนั้น
+    if (user.constituencyId !== constituencyId) {
+      throw new Error(`ผู้ใช้ไม่ได้อาศัยอยู่ในเขตเลือกตั้ง ID: ${constituencyId} ไม่สามารถลงสมัครในเขตนี้ได้`);
+    }
+
+    // 3. ตรวจสอบว่าพรรคมีอยู่จริง
     const party = await electionRepo.findPartyById(partyId);
     if (!party) {
       throw new Error(`ไม่พบพรรค ID: ${partyId}`);
     }
 
-    // 2. ตรวจสอบว่าเขตเลือกตั้งมีอยู่จริง
+    // 4. ตรวจสอบว่าเขตเลือกตั้งมีอยู่จริง
     const constituency =
       await electionRepo.findConstituencyById(constituencyId);
     if (!constituency) {
       throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${constituencyId}`);
     }
 
-    // 3. สร้างผู้สมัคร
+    // 5. สร้างผู้สมัคร
     const candidate = await electionRepo.createCandidate({
       candidateNumber,
       title,
@@ -111,6 +123,9 @@ export class ElectionService {
       lastName,
       imageUrl,
       policy,
+      user: {
+        connect: { id: userId },
+      },
       party: {
         connect: { id: partyId },
       },

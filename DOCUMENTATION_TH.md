@@ -436,6 +436,7 @@ Authorization: Bearer <token>
 
 ```json
 {
+  "userId": 5,
   "candidateNumber": 1,
   "title": "นาย",
   "firstName": "ธนวัฒน์",
@@ -449,6 +450,8 @@ Authorization: Bearer <token>
 
 **การตรวจสอบ:**
 
+- ✅ ตรวจสอบว่าผู้ใช้มีอยู่จริง
+- ✅ ตรวจสอบว่าผู้ใช้อาศัยอยู่ในเขตเลือกตั้งที่ระบุ
 - ✅ ตรวจสอบว่าพรรคมีอยู่จริง
 - ✅ ตรวจสอบว่าเขตเลือกตั้งมีอยู่จริง
 
@@ -733,6 +736,7 @@ curl -X POST http://localhost:3000/api/election/candidate \
   -H "Authorization: Bearer $EC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+    "userId": 5,
     "candidateNumber": 1,
     "title": "นาย",
     "firstName": "ทดสอบ",
@@ -770,6 +774,7 @@ curl -X POST http://localhost:3000/api/election/candidate \
   -H "Authorization: Bearer $EC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+    "userId": 5,
     "candidateNumber": 99,
     "firstName": "Test",
     "lastName": "Test",
@@ -777,7 +782,20 @@ curl -X POST http://localhost:3000/api/election/candidate \
     "constituencyId": 1
   }'
 
-# 3. ลงคะแนนให้ผู้สมัครคนละเขต (ควรได้ error)
+# 3. เพิ่มผู้สมัครในเขตที่ไม่ได้อาศัยอยู่ (ควรได้ error)
+curl -X POST http://localhost:3000/api/election/candidate \
+  -H "Authorization: Bearer $EC_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": 5,
+    "candidateNumber": 1,
+    "firstName": "Test",
+    "lastName": "Test",
+    "partyId": 1,
+    "constituencyId": 99
+  }'
+
+# 4. ลงคะแนนให้ผู้สมัครคนละเขต (ควรได้ error)
 curl -X POST http://localhost:3000/api/votes \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -830,6 +848,7 @@ model User {
   constituencyId Int
   constituency   Constituency @relation(fields: [constituencyId], references: [id])
   vote           Vote?
+  candidateProfile Candidate?
 }
 ```
 
@@ -844,6 +863,8 @@ model Candidate {
   lastName        String
   imageUrl        String?
   policy          String?      @db.Text
+  userId          Int          @unique
+  user            User         @relation(fields: [userId], references: [id])
   partyId         Int
   party           Party        @relation(fields: [partyId], references: [id])
   constituencyId  Int
@@ -871,8 +892,10 @@ model Vote {
 
 - User → Constituency (many-to-one)
 - User → Vote (one-to-one)
+- User → Candidate (one-to-one, optional - ผู้ใช้สามารถเป็นผู้สมัครได้)
+- Candidate → User (one-to-one, required - ผู้สมัครต้องเป็นผู้ใช้)
 - Candidate → Party (many-to-one)
-- Candidate → Constituency (many-to-one)
+- Candidate → Constituency (many-to-one, ต้องตรงกับเขตของผู้ใช้)
 - Vote → User (many-to-one)
 - Vote → Candidate (many-to-one)
 

@@ -436,6 +436,7 @@ Authorization: Bearer <token>
 
 ```json
 {
+  "userId": 5,
   "candidateNumber": 1,
   "title": "Mr.",
   "firstName": "Michael",
@@ -449,6 +450,8 @@ Authorization: Bearer <token>
 
 **Validations:**
 
+- ✅ Validates user exists
+- ✅ Validates user lives in the specified constituency (residency check)
 - ✅ Validates party exists
 - ✅ Validates constituency exists
 
@@ -733,6 +736,7 @@ curl -X POST http://localhost:3000/api/election/candidate \
   -H "Authorization: Bearer $EC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+    "userId": 5,
     "candidateNumber": 1,
     "title": "Mr.",
     "firstName": "Test",
@@ -770,11 +774,25 @@ curl -X POST http://localhost:3000/api/election/candidate \
   -H "Authorization: Bearer $EC_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
+    "userId": 5,
     "candidateNumber": 99,
     "firstName": "Test",
     "lastName": "Test",
     "partyId": 999,
     "constituencyId": 1
+  }'
+
+# 3. Add candidate in different constituency from where they live (should error)
+curl -X POST http://localhost:3000/api/election/candidate \
+  -H "Authorization: Bearer $EC_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": 5,
+    "candidateNumber": 1,
+    "firstName": "Test",
+    "lastName": "Test",
+    "partyId": 1,
+    "constituencyId": 99
   }'
 
 # 3. Vote for candidate in different constituency (should error)
@@ -830,6 +848,7 @@ model User {
   constituencyId Int
   constituency   Constituency @relation(fields: [constituencyId], references: [id])
   vote           Vote?
+  candidateProfile Candidate?
 }
 ```
 
@@ -844,6 +863,8 @@ model Candidate {
   lastName        String
   imageUrl        String?
   policy          String?      @db.Text
+  userId          Int          @unique
+  user            User         @relation(fields: [userId], references: [id])
   partyId         Int
   party           Party        @relation(fields: [partyId], references: [id])
   constituencyId  Int
@@ -871,8 +892,10 @@ model Vote {
 
 - User → Constituency (many-to-one)
 - User → Vote (one-to-one)
+- User → Candidate (one-to-one, optional - a user can be a candidate)
+- Candidate → User (one-to-one, required - every candidate must be a user)
 - Candidate → Party (many-to-one)
-- Candidate → Constituency (many-to-one)
+- Candidate → Constituency (many-to-one, must match user's constituency)
 - Vote → User (many-to-one)
 - Vote → Candidate (many-to-one)
 

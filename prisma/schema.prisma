@@ -62,7 +62,8 @@ model User {
   constituency   Constituency @relation(fields: [constituencyId], references: [id])
 
   // Relations
-  vote           Vote?        // One user can have at most one active vote
+  vote             Vote?        // One user can have at most one active vote
+  candidateProfile Candidate?   // One user can be at most one candidate
 }
 
 model Candidate {
@@ -75,6 +76,9 @@ model Candidate {
   policy          String?      @db.Text
   
   // Foreign Keys
+  userId          Int          @unique // One user can only be one candidate
+  user            User         @relation(fields: [userId], references: [id])
+  
   partyId         Int
   party           Party        @relation(fields: [partyId], references: [id])
   

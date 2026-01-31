@@ -1,5 +1,5 @@
 // src/repositories/election.repository.ts
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma";
 import { prisma } from "../lib/prisma";
 
 // ==================== CONSTITUENCY ====================
@@ -120,6 +120,7 @@ export const createCandidate = async (data: Prisma.CandidateCreateInput) => {
   return await prisma.candidate.create({
     data,
     include: {
+      user: true,
       party: true,
       constituency: true,
     },

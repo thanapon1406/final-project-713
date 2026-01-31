@@ -1,5 +1,5 @@
 // src/repositories/vote.repository.ts
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma";
 import { prisma } from "../lib/prisma";
 
 // ตรวจสอบว่า User ลงคะแนนไปแล้วหรือยัง

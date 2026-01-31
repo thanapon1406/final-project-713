@@ -1,5 +1,5 @@
 // src/repositories/userRepository.ts
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma";
 import { prisma } from "../lib/prisma";
 
 // ฟังก์ชันสร้าง User

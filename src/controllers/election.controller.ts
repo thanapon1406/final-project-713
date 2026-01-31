@@ -58,6 +58,7 @@ export class ElectionController {
         policy,
         partyId,
         constituencyId,
+        userId,
       } = req.body;
 
       // Validation
@@ -66,12 +67,13 @@ export class ElectionController {
         !firstName ||
         !lastName ||
         !partyId ||
-        !constituencyId
+        !constituencyId ||
+        !userId
       ) {
         return res.status(400).json({
           success: false,
           message:
-            "กรุณากระบุข้อมูลที่จำเป็น: candidateNumber, firstName, lastName, partyId, constituencyId",
+            "กรุณากระบุข้อมูลที่จำเป็น: candidateNumber, firstName, lastName, partyId, constituencyId, userId",
         });
       }
 
@@ -84,6 +86,7 @@ export class ElectionController {
         policy || null,
         partyId,
         constituencyId,
+        userId,
       );
 
       res.status(201).json({

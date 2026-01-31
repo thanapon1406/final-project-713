@@ -67,6 +67,7 @@ router.post(
  * /api/election/candidate:
  *   post:
  *     summary: Register a new candidate (EC only)
+ *     description: Register a user as a candidate. The user must live in the specified constituency to be eligible.
  *     tags: [Election]
  *     security:
  *       - bearerAuth: []
@@ -77,12 +78,17 @@ router.post(
  *           schema:
  *             type: object
  *             required:
+ *               - userId
  *               - candidateNumber
  *               - firstName
  *               - lastName
  *               - partyId
  *               - constituencyId
  *             properties:
+ *               userId:
+ *                 type: integer
+ *                 example: 5
+ *                 description: The ID of the user who will become a candidate (must live in the constituency)
  *               candidateNumber:
  *                 type: integer
  *                 example: 1
@@ -124,7 +130,7 @@ router.post(
  *                 data:
  *                   $ref: '#/components/schemas/Candidate'
  *       400:
- *         description: Invalid input - party or constituency not found
+ *         description: Invalid input - user not found, user doesn't live in constituency, party or constituency not found
  *       403:
  *         description: Forbidden - EC role required
  */

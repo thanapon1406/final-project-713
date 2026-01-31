@@ -68,10 +68,15 @@ const options: swaggerJsdoc.Options = {
           type: "object",
           properties: {
             id: { type: "integer", example: 1 },
-            name: { type: "string", example: "Jane Smith" },
+            userId: { type: "integer", example: 5 },
+            candidateNumber: { type: "integer", example: 1 },
+            title: { type: "string", example: "Mr." },
+            firstName: { type: "string", example: "Jane" },
+            lastName: { type: "string", example: "Smith" },
+            imageUrl: { type: "string", example: "https://example.com/photo.jpg" },
+            policy: { type: "string", example: "Policy statement" },
             partyId: { type: "integer", example: 1 },
             constituencyId: { type: "integer", example: 1 },
-            createdAt: { type: "string", format: "date-time" },
           },
         },
         Vote: {

@@ -36,22 +36,6 @@ async function main() {
       },
     },
   });
-
-  console.log("✅ Admin user created:");
-  console.log({
-    nationalId: admin.nationalId,
-    name: `${admin.firstName} ${admin.lastName}`,
-    role: admin.role,
-  });
-
-  console.log("\n🎉 Seeding completed successfully!");
-  console.log("\n📝 Admin Credentials:");
-  console.log("   National ID: 0000000000000");
-  console.log("   Role: ADMIN");
-  console.log("\n💡 Use this to login and get admin token:");
-  console.log("   curl -X POST http://localhost:3000/api/auth/login \\");
-  console.log('     -H "Content-Type: application/json" \\');
-  console.log('     -d \'{"nationalId": "0000000000000"}\'');
 }
 
 main()

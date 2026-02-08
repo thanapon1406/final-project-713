@@ -307,6 +307,7 @@ curl http://localhost:3000/api/votes/ballot/1 \
 ```json
 {
   "nationalId": "1234567890123",
+  "laserCode": "JT1234567890",
   "firstName": "John",
   "lastName": "Doe",
   "address": "123 Main Street",
@@ -315,7 +316,9 @@ curl http://localhost:3000/api/votes/ballot/1 \
 }
 ```
 
-**Note:** The system will automatically find the constituency based on `province` + `districtNumber`
+**Note:** 
+- The system will automatically find the constituency based on `province` + `districtNumber`
+- `laserCode` is the laser code from the back of Thai ID card used for authentication
 
 **Response (201):**
 
@@ -345,9 +348,12 @@ curl http://localhost:3000/api/votes/ballot/1 \
 
 ```json
 {
-  "nationalId": "1234567890123"
+  "nationalId": "1234567890123",
+  "laserCode": "JT1234567890"
 }
 ```
+
+**Note:** Both `nationalId` and `laserCode` are required for authentication
 
 **Response (200):**
 

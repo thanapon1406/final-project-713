@@ -305,6 +305,7 @@ curl http://localhost:3000/api/votes/ballot/1 \
 ```json
 {
   "nationalId": "1234567890123",
+  "laserCode": "JT1234567890",
   "firstName": "สมชาย",
   "lastName": "ใจดี",
   "address": "123 ถนนสุขุมวิท",
@@ -313,7 +314,9 @@ curl http://localhost:3000/api/votes/ballot/1 \
 }
 ```
 
-**หมายเหตุ:** ระบบจะค้นหาเขตเลือกตั้งจาก `province` + `districtNumber` อัตโนมัติ
+**หมายเหตุ:** 
+- ระบบจะค้นหาเขตเลือกตั้งจาก `province` + `districtNumber` อัตโนมัติ
+- `laserCode` คือรหัสเลเซอร์หลังบัตรประชาชนสำหรับยืนยันตัวตน
 
 **Response (201):**
 
@@ -343,9 +346,12 @@ curl http://localhost:3000/api/votes/ballot/1 \
 
 ```json
 {
-  "nationalId": "1234567890123"
+  "nationalId": "1234567890123",
+  "laserCode": "JT1234567890"
 }
 ```
+
+**หมายเหตุ:** ต้องใช้ทั้ง `nationalId` และ `laserCode` ในการยืนยันตัวตน
 
 **Response (200):**
 

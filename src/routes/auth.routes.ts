@@ -20,6 +20,7 @@ const authController = new AuthController();
  *             type: object
  *             required:
  *               - nationalId
+ *               - laserCode
  *               - firstName
  *               - lastName
  *               - province
@@ -28,6 +29,11 @@ const authController = new AuthController();
  *               nationalId:
  *                 type: string
  *                 example: "1234567890123"
+ *                 description: 13-digit Thai National ID
+ *               laserCode:
+ *                 type: string
+ *                 example: "JT1234567890"
+ *                 description: Laser code from the back of Thai ID card
  *               firstName:
  *                 type: string
  *                 example: "John"
@@ -75,7 +81,7 @@ router.post("/register", authController.register);
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Login with national ID
+ *     summary: Login with national ID and laser code
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -85,10 +91,16 @@ router.post("/register", authController.register);
  *             type: object
  *             required:
  *               - nationalId
+ *               - laserCode
  *             properties:
  *               nationalId:
  *                 type: string
  *                 example: "1234567890123"
+ *                 description: 13-digit Thai National ID
+ *               laserCode:
+ *                 type: string
+ *                 example: "JT1234567890"
+ *                 description: Laser code from the back of Thai ID card
  *     responses:
  *       200:
  *         description: Login successful

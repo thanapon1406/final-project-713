@@ -15,6 +15,7 @@ export class AuthController {
       // รับค่าจาก Body
       const {
         nationalId,
+        laserCode,
         firstName,
         lastName,
         address,
@@ -25,6 +26,7 @@ export class AuthController {
       // Validate required fields
       if (
         !nationalId ||
+        !laserCode ||
         !firstName ||
         !lastName ||
         !province ||
@@ -33,13 +35,14 @@ export class AuthController {
         return res.status(400).json({
           success: false,
           message:
-            "กรุณาระบุข้อมูลให้ครบถ้วน (nationalId, firstName, lastName, province, districtNumber)",
+            "กรุณาระบุข้อมูลให้ครบถ้วน (nationalId, laserCode, firstName, lastName, province, districtNumber)",
         });
       }
 
       // เรียก Service เพื่อทำงาน
       const newUser = await this.authService.registerUser(
         nationalId,
+        laserCode,
         firstName,
         lastName,
         address,
@@ -88,17 +91,17 @@ export class AuthController {
    */
   public login = async (req: Request, res: Response) => {
     try {
-      const { nationalId } = req.body;
+      const { nationalId, laserCode } = req.body;
 
-      if (!nationalId) {
+      if (!nationalId || !laserCode) {
         return res.status(400).json({
           success: false,
-          message: "กรุณาระบุเลขบัตรประชาชน",
+          message: "กรุณาระบุเลขบัตรประชาชนและ Laser Code",
         });
       }
 
       // เรียก Service เพื่อหาผู้ใช้
-      const user = await this.authService.loginUser(nationalId);
+      const user = await this.authService.loginUser(nationalId, laserCode);
 
       // สร้าง JWT Token
       const token = jwt.sign(

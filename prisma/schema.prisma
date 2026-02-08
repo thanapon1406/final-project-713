@@ -52,6 +52,7 @@ model Party {
 model User {
   id             Int          @id @default(autoincrement())
   nationalId     String       @unique // 13-digit ID must be unique
+  laserCode      String?      // Laser code from ID card for authentication
   firstName      String
   lastName       String
   address        String?      @db.Text

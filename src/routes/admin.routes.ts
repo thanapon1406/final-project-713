@@ -44,6 +44,117 @@ router.get(
 
 /**
  * @swagger
+ * /api/admin/user/{id}:
+ *   get:
+ *     summary: Get a user by ID (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *       400:
+ *         description: Invalid user ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin role required
+ */
+router.get(
+  "/user/:id",
+  authenticate,
+  authorize("ADMIN"),
+  adminController.getUserById,
+);
+
+/**
+ * @swagger
+ * /api/admin/user/{id}:
+ *   put:
+ *     summary: Update a user (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               constituencyId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin role required
+ */
+router.put(
+  "/user/:id",
+  authenticate,
+  authorize("ADMIN"),
+  adminController.updateUser,
+);
+
+/**
+ * @swagger
+ * /api/admin/demote-voter/{userId}:
+ *   patch:
+ *     summary: Demote EC to Voter role (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: User ID to demote
+ *     responses:
+ *       200:
+ *         description: User demoted successfully
+ *       400:
+ *         description: Invalid input or user not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin role required
+ */
+router.patch(
+  "/demote-voter/:userId",
+  authenticate,
+  authorize("ADMIN"),
+  adminController.demoteECToVoter,
+);
+
+/**
+ * @swagger
  * /api/admin/constituency:
  *   post:
  *     summary: Create a new constituency

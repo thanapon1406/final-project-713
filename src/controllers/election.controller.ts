@@ -185,6 +185,56 @@ export class ElectionController {
     }
   };
 
+  /**
+   * GET /api/election/public/parties
+   * ดูรายการพรรคทั้งหมดแบบสาธารณะ (Public)
+   */
+  getPublicPartyList = async (req: Request, res: Response) => {
+    try {
+      const parties = await this.electionService.getPublicPartyList();
+
+      res.status(200).json({
+        success: true,
+        data: parties,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /**
+   * GET /api/election/public/party/:id
+   * ดูรายละเอียดพรรคพร้อมรายชื่อผู้สมัคร (Public)
+   */
+  getPublicPartyDetails = async (req: Request, res: Response) => {
+    try {
+      const idParam = req.params.id;
+      const id = parseInt(Array.isArray(idParam) ? idParam[0] : idParam);
+
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Party ID ไม่ถูกต้อง",
+        });
+      }
+
+      const party = await this.electionService.getPublicPartyDetails(id);
+
+      res.status(200).json({
+        success: true,
+        data: party,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
   // ==================== EC PARTY MANAGEMENT ====================
 
   /**

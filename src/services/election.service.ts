@@ -220,6 +220,132 @@ export class ElectionService {
     });
   };
 
+  // ==================== PUBLIC PARTY VIEW ====================
+
+  /**
+   * ดูรายการพรรคทั้งหมดแบบสาธารณะ พร้อมจำนวนผู้สมัครและ MPs ที่ได้รับเลือก (Public)
+   */
+  public getPublicPartyList = async () => {
+    const parties = await partyRepo.findAllWithCandidates();
+    const allConstituencies = await constituencyRepo.findAll();
+    const closedConstituencyIds = allConstituencies
+      .filter((c) => c.isClosed)
+      .map((c) => c.id);
+
+    // Get closed constituencies with full data
+    const closedConstituenciesData = await Promise.all(
+      closedConstituencyIds.map((id) => constituencyRepo.findWithResults(id)),
+    );
+
+    return parties.map((party) => {
+      let totalElectedMPs = 0;
+
+      for (const constituency of closedConstituenciesData) {
+        if (!constituency) continue;
+
+        let maxVotes = -1;
+        let winnerPartyId: number | null = null;
+
+        for (const candidate of constituency.candidates) {
+          const voteCount = candidate.votes.length;
+          if (voteCount > maxVotes) {
+            maxVotes = voteCount;
+            winnerPartyId = candidate.partyId;
+          }
+        }
+
+        if (winnerPartyId === party.id) {
+          totalElectedMPs++;
+        }
+      }
+
+      return {
+        id: party.id,
+        name: party.name,
+        logoUrl: party.logoUrl,
+        policy: party.policy,
+        totalCandidates: party.candidates.length,
+        totalElectedMPs,
+      };
+    });
+  };
+
+  /**
+   * ดูรายละเอียดพรรคพร้อมรายชื่อผู้สมัครทั้งหมด (Public)
+   */
+  public getPublicPartyDetails = async (partyId: number) => {
+    const party = await partyRepo.findByIdWithCandidates(partyId);
+
+    if (!party) {
+      throw new Error(`ไม่พบพรรค ID: ${partyId}`);
+    }
+
+    const allConstituencies = await constituencyRepo.findAll();
+    const closedConstituencyIds = allConstituencies
+      .filter((c) => c.isClosed)
+      .map((c) => c.id);
+
+    // Determine winners for closed constituencies
+    const winners = new Map<number, number>(); // constituencyId -> winnerId
+    const closedConstituenciesData = await Promise.all(
+      closedConstituencyIds.map((id) => constituencyRepo.findWithResults(id)),
+    );
+
+    for (const constituency of closedConstituenciesData) {
+      if (!constituency) continue;
+
+      let maxVotes = -1;
+      let winnerId: number | null = null;
+
+      for (const candidate of constituency.candidates) {
+        const voteCount = candidate.votes.length;
+        if (voteCount > maxVotes) {
+          maxVotes = voteCount;
+          winnerId = candidate.id;
+        }
+      }
+
+      if (winnerId !== null) {
+        winners.set(constituency.id, winnerId);
+      }
+    }
+
+    const candidates = party.candidates.map((candidate) => {
+      const isClosed = closedConstituencyIds.includes(candidate.constituencyId);
+      const isElected = winners.get(candidate.constituencyId) === candidate.id;
+
+      return {
+        id: candidate.id,
+        candidateNumber: candidate.candidateNumber,
+        title: candidate.title,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        imageUrl: candidate.imageUrl,
+        policy: candidate.policy,
+        constituency: {
+          id: candidate.constituency.id,
+          province: candidate.constituency.province,
+          districtNumber: candidate.constituency.districtNumber,
+          isClosed: candidate.constituency.isClosed,
+        },
+        voteCount: isClosed ? candidate.votes.length : null,
+        isElected,
+      };
+    });
+
+    const totalElectedMPs = candidates.filter((c) => c.isElected).length;
+
+    return {
+      id: party.id,
+      name: party.name,
+      logoUrl: party.logoUrl,
+      policy: party.policy,
+      totalCandidates: candidates.length,
+      totalElectedMPs,
+      candidates,
+    };
+  };
+
   /**
    * ดึงรายการพรรคทั้งหมด (EC only)
    */

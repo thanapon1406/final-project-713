@@ -89,3 +89,25 @@ export const findAllWithCandidateCount = async () => {
     },
   });
 };
+
+/**
+ * Find party by ID with all candidates (for public viewing)
+ */
+export const findByIdWithCandidates = async (id: number) => {
+  return await prisma.party.findUnique({
+    where: { id },
+    include: {
+      candidates: {
+        include: {
+          constituency: true,
+          votes: true,
+        },
+        orderBy: [
+          { constituency: { province: "asc" } },
+          { constituency: { districtNumber: "asc" } },
+          { candidateNumber: "asc" },
+        ],
+      },
+    },
+  });
+};

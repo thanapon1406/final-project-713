@@ -317,6 +317,136 @@ router.get("/party-overview", electionController.getPartyOverview);
  */
 router.get("/constituencies", electionController.getAllConstituencies);
 
+/**
+ * @swagger
+ * /api/election/public/parties:
+ *   get:
+ *     summary: View all parties with candidate and MP counts (Public)
+ *     description: Returns all parties with their candidate counts and elected MPs count (from closed constituencies)
+ *     tags: [Election]
+ *     responses:
+ *       200:
+ *         description: Parties retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         example: "Democratic Party"
+ *                       logoUrl:
+ *                         type: string
+ *                         example: "https://example.com/logo.png"
+ *                       policy:
+ *                         type: string
+ *                         example: "Party policy statement"
+ *                       totalCandidates:
+ *                         type: integer
+ *                         example: 10
+ *                         description: Total candidates registered for this party
+ *                       totalElectedMPs:
+ *                         type: integer
+ *                         example: 3
+ *                         description: Number of elected MPs from closed constituencies
+ */
+router.get("/public/parties", electionController.getPublicPartyList);
+
+/**
+ * @swagger
+ * /api/election/public/party/{id}:
+ *   get:
+ *     summary: View party details with all candidates (Public)
+ *     description: Returns party information along with all candidates, their constituencies, and election status
+ *     tags: [Election]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "Democratic Party"
+ *                     logoUrl:
+ *                       type: string
+ *                       example: "https://example.com/logo.png"
+ *                     policy:
+ *                       type: string
+ *                       example: "Party policy statement"
+ *                     totalCandidates:
+ *                       type: integer
+ *                       example: 10
+ *                     totalElectedMPs:
+ *                       type: integer
+ *                       example: 3
+ *                     candidates:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           candidateNumber:
+ *                             type: integer
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
+ *                             type: string
+ *                           imageUrl:
+ *                             type: string
+ *                           constituency:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                               province:
+ *                                 type: string
+ *                               districtNumber:
+ *                                 type: integer
+ *                               isClosed:
+ *                                 type: boolean
+ *                           voteCount:
+ *                             type: integer
+ *                             nullable: true
+ *                             description: Only present when constituency is closed
+ *                           isElected:
+ *                             type: boolean
+ *                             description: Whether this candidate won in their constituency
+ *       404:
+ *         description: Party not found
+ */
+router.get("/public/party/:id", electionController.getPublicPartyDetails);
+
 // --- EC PARTY MANAGEMENT ---
 
 /**

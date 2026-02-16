@@ -213,4 +213,122 @@ export class ElectionController {
       });
     }
   };
+
+  // ==================== EC PARTY MANAGEMENT ====================
+
+  /**
+   * GET /api/election/parties
+   * ดูรายการพรรคทั้งหมด (EC only)
+   */
+  getAllParties = async (req: Request, res: Response) => {
+    try {
+      const parties = await this.electionService.getAllParties();
+
+      res.status(200).json({
+        success: true,
+        data: parties,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /**
+   * GET /api/election/party/:id
+   * ดูพรรคตาม ID (EC only)
+   */
+  getPartyById = async (req: Request, res: Response) => {
+    try {
+      const idParam = req.params.id;
+      const id = parseInt(Array.isArray(idParam) ? idParam[0] : idParam);
+
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Party ID ไม่ถูกต้อง",
+        });
+      }
+
+      const party = await this.electionService.getPartyById(id);
+
+      res.status(200).json({
+        success: true,
+        data: party,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /**
+   * PUT /api/election/party/:id
+   * อัปเดตพรรค (EC only)
+   */
+  updateParty = async (req: Request, res: Response) => {
+    try {
+      const idParam = req.params.id;
+      const id = parseInt(Array.isArray(idParam) ? idParam[0] : idParam);
+      const { name, logoUrl, policy } = req.body;
+
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Party ID ไม่ถูกต้อง",
+        });
+      }
+
+      const party = await this.electionService.updateParty(id, {
+        name,
+        logoUrl,
+        policy,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "อัปเดตพรรคสำเร็จ",
+        data: party,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /**
+   * DELETE /api/election/party/:id
+   * ลบพรรค (EC only)
+   */
+  deleteParty = async (req: Request, res: Response) => {
+    try {
+      const idParam = req.params.id;
+      const id = parseInt(Array.isArray(idParam) ? idParam[0] : idParam);
+
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: "Party ID ไม่ถูกต้อง",
+        });
+      }
+
+      await this.electionService.deleteParty(id);
+
+      res.status(200).json({
+        success: true,
+        message: "ลบพรรคสำเร็จ",
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
 }

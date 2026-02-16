@@ -61,4 +61,86 @@ export class AdminService {
 
     return updatedUser;
   };
+
+  /**
+   * ดึงรายการเขตเลือกตั้งทั้งหมด (Admin only)
+   */
+  public getAllConstituencies = async () => {
+    return await constituencyRepo.findAllWithCandidateCount();
+  };
+
+  /**
+   * ดึงเขตเลือกตั้งตาม ID (Admin only)
+   */
+  public getConstituencyById = async (id: number) => {
+    const constituency = await constituencyRepo.findById(id);
+
+    if (!constituency) {
+      throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${id}`);
+    }
+
+    return constituency;
+  };
+
+  /**
+   * อัปเดตเขตเลือกตั้ง (Admin only)
+   */
+  public updateConstituency = async (
+    id: number,
+    data: { province?: string; districtNumber?: number; isClosed?: boolean },
+  ) => {
+    const constituency = await constituencyRepo.findById(id);
+
+    if (!constituency) {
+      throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${id}`);
+    }
+
+    // ถ้ามีการเปลี่ยน province หรือ districtNumber ต้องตรวจสอบว่าไม่ซ้ำ
+    if (data.province || data.districtNumber) {
+      const newProvince = data.province || constituency.province;
+      const newDistrictNumber =
+        data.districtNumber || constituency.districtNumber;
+
+      const existing = await constituencyRepo.findByLocation(
+        newProvince,
+        newDistrictNumber,
+      );
+
+      if (existing && existing.id !== id) {
+        throw new Error(
+          `เขตเลือกตั้ง ${newProvince} เขตที่ ${newDistrictNumber} มีอยู่แล้ว`,
+        );
+      }
+    }
+
+    return await constituencyRepo.update(id, data);
+  };
+
+  /**
+   * ลบเขตเลือกตั้ง (Admin only)
+   */
+  public deleteConstituency = async (id: number) => {
+    const constituency = await constituencyRepo.findById(id);
+
+    if (!constituency) {
+      throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${id}`);
+    }
+
+    return await constituencyRepo.remove(id);
+  };
+
+  /**
+   * เปิด/ปิดการลงคะแนนในเขต (Admin only)
+   */
+  public toggleConstituencyStatus = async (id: number) => {
+    const constituency = await constituencyRepo.findById(id);
+
+    if (!constituency) {
+      throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${id}`);
+    }
+
+    return await constituencyRepo.update(id, {
+      isClosed: !constituency.isClosed,
+    });
+  };
 }

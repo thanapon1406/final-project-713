@@ -44,3 +44,48 @@ export const findAllWithCandidates = async () => {
     },
   });
 };
+
+/**
+ * Update a party
+ */
+export const update = async (
+  id: number,
+  data: { name?: string; logoUrl?: string; policy?: string },
+) => {
+  return await prisma.party.update({
+    where: { id },
+    data,
+  });
+};
+
+/**
+ * Delete a party
+ */
+export const remove = async (id: number) => {
+  return await prisma.party.delete({
+    where: { id },
+  });
+};
+
+/**
+ * Find party by name
+ */
+export const findByName = async (name: string) => {
+  return await prisma.party.findFirst({
+    where: { name },
+  });
+};
+
+/**
+ * Get all parties with candidate count
+ */
+export const findAllWithCandidateCount = async () => {
+  return await prisma.party.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      _count: {
+        select: { candidates: true },
+      },
+    },
+  });
+};

@@ -181,4 +181,62 @@ export class ElectionService {
       };
     });
   };
+
+  /**
+   * ดึงรายการพรรคทั้งหมด (EC only)
+   */
+  public getAllParties = async () => {
+    return await partyRepo.findAllWithCandidateCount();
+  };
+
+  /**
+   * ดึงพรรคตาม ID (EC only)
+   */
+  public getPartyById = async (id: number) => {
+    const party = await partyRepo.findById(id);
+
+    if (!party) {
+      throw new Error(`ไม่พบพรรค ID: ${id}`);
+    }
+
+    return party;
+  };
+
+  /**
+   * อัปเดตพรรค (EC only)
+   */
+  public updateParty = async (
+    id: number,
+    data: { name?: string; logoUrl?: string; policy?: string },
+  ) => {
+    const party = await partyRepo.findById(id);
+
+    if (!party) {
+      throw new Error(`ไม่พบพรรค ID: ${id}`);
+    }
+
+    // ถ้ามีการเปลี่ยนชื่อพรรค ต้องตรวจสอบว่าไม่ซ้ำ
+    if (data.name && data.name !== party.name) {
+      const existing = await partyRepo.findByName(data.name);
+
+      if (existing) {
+        throw new Error(`พรรค "${data.name}" มีอยู่แล้ว`);
+      }
+    }
+
+    return await partyRepo.update(id, data);
+  };
+
+  /**
+   * ลบพรรค (EC only)
+   */
+  public deleteParty = async (id: number) => {
+    const party = await partyRepo.findById(id);
+
+    if (!party) {
+      throw new Error(`ไม่พบพรรค ID: ${id}`);
+    }
+
+    return await partyRepo.remove(id);
+  };
 }

@@ -317,4 +317,187 @@ router.get("/party-overview", electionController.getPartyOverview);
  */
 router.get("/constituencies", electionController.getAllConstituencies);
 
+// --- EC PARTY MANAGEMENT ---
+
+/**
+ * @swagger
+ * /api/election/parties:
+ *   get:
+ *     summary: Get all parties (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Parties retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Party'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/parties",
+  authenticate,
+  authorize("EC"),
+  electionController.getAllParties,
+);
+
+/**
+ * @swagger
+ * /api/election/party/{id}:
+ *   get:
+ *     summary: Get a party by ID (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Party'
+ *       400:
+ *         description: Invalid party ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/party/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.getPartyById,
+);
+
+/**
+ * @swagger
+ * /api/election/party/{id}:
+ *   put:
+ *     summary: Update a party (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Democratic Party"
+ *               logoUrl:
+ *                 type: string
+ *                 example: "https://example.com/new-logo.png"
+ *               policy:
+ *                 type: string
+ *                 example: "Updated policy statement"
+ *     responses:
+ *       200:
+ *         description: Party updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "อัปเดตพรรคสำเร็จ"
+ *                 data:
+ *                   $ref: '#/components/schemas/Party'
+ *       400:
+ *         description: Invalid input or party not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.put(
+  "/party/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.updateParty,
+);
+
+/**
+ * @swagger
+ * /api/election/party/{id}:
+ *   delete:
+ *     summary: Delete a party (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "ลบพรรคสำเร็จ"
+ *       400:
+ *         description: Invalid party ID or party not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.delete(
+  "/party/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.deleteParty,
+);
+
 export default router;

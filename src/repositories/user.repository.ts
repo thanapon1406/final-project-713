@@ -55,3 +55,103 @@ export const findAll = async () => {
     orderBy: { id: "asc" },
   });
 };
+
+/**
+ * Get all users with full details including candidate profile and vote status (Admin)
+ */
+export const findAllWithFullDetails = async () => {
+  return await prisma.user.findMany({
+    include: {
+      constituency: true,
+      candidateProfile: {
+        include: {
+          party: true,
+        },
+      },
+      vote: true,
+    },
+    orderBy: { id: "asc" },
+  });
+};
+
+/**
+ * Get users by constituency with candidate info (for EC candidate management)
+ */
+export const findByConstituencyWithCandidateInfo = async (
+  constituencyId: number,
+) => {
+  return await prisma.user.findMany({
+    where: { constituencyId },
+    include: {
+      constituency: true,
+      candidateProfile: {
+        include: {
+          party: true,
+        },
+      },
+    },
+    orderBy: { id: "asc" },
+  });
+};
+
+/**
+ * Get users by province (filter by province name)
+ */
+export const findByProvince = async (province: string) => {
+  return await prisma.user.findMany({
+    where: {
+      constituency: {
+        province,
+      },
+    },
+    include: {
+      constituency: true,
+      candidateProfile: {
+        include: {
+          party: true,
+        },
+      },
+    },
+    orderBy: { id: "asc" },
+  });
+};
+
+/**
+ * Get users filtered by role
+ */
+export const findByRole = async (role: "VOTER" | "EC" | "ADMIN") => {
+  return await prisma.user.findMany({
+    where: { role },
+    include: {
+      constituency: true,
+      candidateProfile: {
+        include: {
+          party: true,
+        },
+      },
+    },
+    orderBy: { id: "asc" },
+  });
+};
+
+/**
+ * Update user details
+ */
+export const update = async (
+  id: number,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    address?: string;
+    constituencyId?: number;
+  },
+) => {
+  return await prisma.user.update({
+    where: { id },
+    data,
+    include: {
+      constituency: true,
+      candidateProfile: true,
+    },
+  });
+};

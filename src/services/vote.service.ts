@@ -2,6 +2,7 @@
 import * as voteRepo from "../repositories/vote.repository";
 import * as userRepo from "../repositories/user.repository";
 import * as candidateRepo from "../repositories/candidate.repository";
+import * as constituencyRepo from "../repositories/constituency.repository";
 
 export class VoteService {
   /**
@@ -95,6 +96,138 @@ export class VoteService {
             name: vote.candidate.party.name,
           },
         },
+      },
+    };
+  };
+
+  /**
+   * ดูคะแนนเสียงของตัวเอง (Get My Vote)
+   */
+  public getMyVote = async (userId: number) => {
+    const user = await userRepo.findById(userId);
+
+    if (!user) {
+      throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
+    }
+
+    if (!user.constituencyId) {
+      throw new Error(`ผู้ใช้ยังไม่ได้ลงทะเบียนในเขตเลือกตั้ง`);
+    }
+
+    const vote = await voteRepo.findVoteByUserId(userId);
+
+    if (!vote) {
+      return {
+        hasVoted: false,
+        constituency: {
+          id: user.constituency.id,
+          province: user.constituency.province,
+          districtNumber: user.constituency.districtNumber,
+          isClosed: user.constituency.isClosed,
+        },
+        vote: null,
+      };
+    }
+
+    return {
+      hasVoted: true,
+      constituency: {
+        id: user.constituency.id,
+        province: user.constituency.province,
+        districtNumber: user.constituency.districtNumber,
+        isClosed: user.constituency.isClosed,
+      },
+      vote: {
+        id: vote.id,
+        timestamp: vote.timestamp,
+        candidate: {
+          id: vote.candidate.id,
+          candidateNumber: vote.candidate.candidateNumber,
+          title: vote.candidate.title,
+          firstName: vote.candidate.firstName,
+          lastName: vote.candidate.lastName,
+          imageUrl: vote.candidate.imageUrl,
+          party: {
+            id: vote.candidate.party.id,
+            name: vote.candidate.party.name,
+            logoUrl: vote.candidate.party.logoUrl,
+          },
+        },
+      },
+    };
+  };
+
+  /**
+   * ดูผลการเลือกตั้งในเขตของตัวเอง (Get My Constituency Results)
+   */
+  public getMyConstituencyResults = async (userId: number) => {
+    const user = await userRepo.findById(userId);
+
+    if (!user) {
+      throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
+    }
+
+    if (!user.constituencyId) {
+      throw new Error(`ผู้ใช้ยังไม่ได้ลงทะเบียนในเขตเลือกตั้ง`);
+    }
+
+    const data = await constituencyRepo.findWithResults(user.constituencyId);
+
+    if (!data) {
+      throw new Error(`ไม่พบเขตเลือกตั้ง ID: ${user.constituencyId}`);
+    }
+
+    // Get user's vote
+    const myVote = await voteRepo.findVoteByUserId(userId);
+
+    const candidatesWithVotes = data.candidates.map((candidate) => ({
+      id: candidate.id,
+      candidateNumber: candidate.candidateNumber,
+      title: candidate.title,
+      firstName: candidate.firstName,
+      lastName: candidate.lastName,
+      imageUrl: candidate.imageUrl,
+      policy: candidate.policy,
+      party: {
+        id: candidate.party.id,
+        name: candidate.party.name,
+        logoUrl: candidate.party.logoUrl,
+      },
+      voteCount: data.isClosed ? candidate.votes.length : null,
+      isMyVote: myVote ? myVote.candidateId === candidate.id : false,
+    }));
+
+    // Determine winner if poll is closed
+    let winner = null;
+    if (data.isClosed && candidatesWithVotes.length > 0) {
+      const maxVotes = Math.max(
+        ...candidatesWithVotes.map((c) => c.voteCount || 0),
+      );
+      winner = candidatesWithVotes.find((c) => c.voteCount === maxVotes);
+    }
+
+    return {
+      constituency: {
+        id: data.id,
+        province: data.province,
+        districtNumber: data.districtNumber,
+        isClosed: data.isClosed,
+      },
+      candidates: candidatesWithVotes,
+      winner: winner
+        ? {
+            id: winner.id,
+            candidateNumber: winner.candidateNumber,
+            title: winner.title,
+            firstName: winner.firstName,
+            lastName: winner.lastName,
+            party: winner.party,
+            voteCount: winner.voteCount,
+          }
+        : null,
+      myVoteStatus: {
+        hasVoted: !!myVote,
+        votedAt: myVote?.timestamp || null,
       },
     };
   };

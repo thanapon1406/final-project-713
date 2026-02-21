@@ -317,4 +317,580 @@ router.get("/party-overview", electionController.getPartyOverview);
  */
 router.get("/constituencies", electionController.getAllConstituencies);
 
+/**
+ * @swagger
+ * /api/election/public/parties:
+ *   get:
+ *     summary: View all parties with candidate and MP counts (Public)
+ *     description: Returns all parties with their candidate counts and elected MPs count (from closed constituencies)
+ *     tags: [Election]
+ *     responses:
+ *       200:
+ *         description: Parties retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         example: "Democratic Party"
+ *                       logoUrl:
+ *                         type: string
+ *                         example: "https://example.com/logo.png"
+ *                       policy:
+ *                         type: string
+ *                         example: "Party policy statement"
+ *                       totalCandidates:
+ *                         type: integer
+ *                         example: 10
+ *                         description: Total candidates registered for this party
+ *                       totalElectedMPs:
+ *                         type: integer
+ *                         example: 3
+ *                         description: Number of elected MPs from closed constituencies
+ */
+router.get("/public/parties", electionController.getPublicPartyList);
+
+/**
+ * @swagger
+ * /api/election/public/party/{id}:
+ *   get:
+ *     summary: View party details with all candidates (Public)
+ *     description: Returns party information along with all candidates, their constituencies, and election status
+ *     tags: [Election]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "Democratic Party"
+ *                     logoUrl:
+ *                       type: string
+ *                       example: "https://example.com/logo.png"
+ *                     policy:
+ *                       type: string
+ *                       example: "Party policy statement"
+ *                     totalCandidates:
+ *                       type: integer
+ *                       example: 10
+ *                     totalElectedMPs:
+ *                       type: integer
+ *                       example: 3
+ *                     candidates:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           candidateNumber:
+ *                             type: integer
+ *                           firstName:
+ *                             type: string
+ *                           lastName:
+ *                             type: string
+ *                           imageUrl:
+ *                             type: string
+ *                           constituency:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                               province:
+ *                                 type: string
+ *                               districtNumber:
+ *                                 type: integer
+ *                               isClosed:
+ *                                 type: boolean
+ *                           voteCount:
+ *                             type: integer
+ *                             nullable: true
+ *                             description: Only present when constituency is closed
+ *                           isElected:
+ *                             type: boolean
+ *                             description: Whether this candidate won in their constituency
+ *       404:
+ *         description: Party not found
+ */
+router.get("/public/party/:id", electionController.getPublicPartyDetails);
+
+// --- EC PARTY MANAGEMENT ---
+
+/**
+ * @swagger
+ * /api/election/parties:
+ *   get:
+ *     summary: Get all parties (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Parties retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Party'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/parties",
+  authenticate,
+  authorize("EC"),
+  electionController.getAllParties,
+);
+
+/**
+ * @swagger
+ * /api/election/party/{id}:
+ *   get:
+ *     summary: Get a party by ID (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Party'
+ *       400:
+ *         description: Invalid party ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/party/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.getPartyById,
+);
+
+/**
+ * @swagger
+ * /api/election/party/{id}:
+ *   put:
+ *     summary: Update a party (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Democratic Party"
+ *               logoUrl:
+ *                 type: string
+ *                 example: "https://example.com/new-logo.png"
+ *               policy:
+ *                 type: string
+ *                 example: "Updated policy statement"
+ *     responses:
+ *       200:
+ *         description: Party updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "อัปเดตพรรคสำเร็จ"
+ *                 data:
+ *                   $ref: '#/components/schemas/Party'
+ *       400:
+ *         description: Invalid input or party not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.put(
+  "/party/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.updateParty,
+);
+
+/**
+ * @swagger
+ * /api/election/party/{id}:
+ *   delete:
+ *     summary: Delete a party (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     responses:
+ *       200:
+ *         description: Party deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "ลบพรรคสำเร็จ"
+ *       400:
+ *         description: Invalid party ID or party not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.delete(
+  "/party/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.deleteParty,
+);
+
+// --- EC CANDIDATE MANAGEMENT ---
+
+/**
+ * @swagger
+ * /api/election/voters:
+ *   get:
+ *     summary: Get eligible voters with candidate info (EC only)
+ *     description: Get voters filtered by constituencyId or province with their candidate registration status
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: constituencyId
+ *         schema:
+ *           type: integer
+ *         description: Filter by constituency ID
+ *       - in: query
+ *         name: province
+ *         schema:
+ *           type: string
+ *         description: Filter by province name
+ *     responses:
+ *       200:
+ *         description: Voters retrieved successfully
+ *       400:
+ *         description: Must specify constituencyId or province
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/voters",
+  authenticate,
+  authorize("EC"),
+  electionController.getEligibleVoters,
+);
+
+/**
+ * @swagger
+ * /api/election/candidates:
+ *   get:
+ *     summary: Get all candidates or filter by constituency (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: constituencyId
+ *         schema:
+ *           type: integer
+ *         description: Filter by constituency ID
+ *     responses:
+ *       200:
+ *         description: Candidates retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/candidates",
+  authenticate,
+  authorize("EC"),
+  electionController.getCandidates,
+);
+
+/**
+ * @swagger
+ * /api/election/candidate/{id}:
+ *   get:
+ *     summary: Get a candidate by ID (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Candidate ID
+ *     responses:
+ *       200:
+ *         description: Candidate retrieved successfully
+ *       400:
+ *         description: Invalid candidate ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/candidate/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.getCandidateById,
+);
+
+/**
+ * @swagger
+ * /api/election/candidate/{id}:
+ *   put:
+ *     summary: Update a candidate (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Candidate ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               candidateNumber:
+ *                 type: integer
+ *               title:
+ *                 type: string
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               imageUrl:
+ *                 type: string
+ *               policy:
+ *                 type: string
+ *               partyId:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Candidate updated successfully
+ *       400:
+ *         description: Invalid input or candidate not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.put(
+  "/candidate/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.updateCandidate,
+);
+
+/**
+ * @swagger
+ * /api/election/candidate/{id}:
+ *   delete:
+ *     summary: Delete a candidate (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Candidate ID
+ *     responses:
+ *       200:
+ *         description: Candidate deleted successfully
+ *       400:
+ *         description: Invalid candidate ID or candidate not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.delete(
+  "/candidate/:id",
+  authenticate,
+  authorize("EC"),
+  electionController.deleteCandidate,
+);
+
+/**
+ * @swagger
+ * /api/election/next-candidate-number/{constituencyId}:
+ *   get:
+ *     summary: Get next available candidate number in constituency (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: constituencyId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Constituency ID
+ *     responses:
+ *       200:
+ *         description: Next candidate number retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     nextCandidateNumber:
+ *                       type: integer
+ *       400:
+ *         description: Invalid constituency ID
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/next-candidate-number/:constituencyId",
+  authenticate,
+  authorize("EC"),
+  electionController.getNextCandidateNumber,
+);
+
+/**
+ * @swagger
+ * /api/election/provinces:
+ *   get:
+ *     summary: Get all provinces with constituencies (EC only)
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Provinces retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.get(
+  "/provinces",
+  authenticate,
+  authorize("EC"),
+  electionController.getAllProvinces,
+);
+
 export default router;

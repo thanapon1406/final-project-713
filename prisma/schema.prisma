@@ -53,9 +53,11 @@ model User {
   id             Int          @id @default(autoincrement())
   nationalId     String       @unique // 13-digit ID must be unique
   laserCode      String?      // Laser code from ID card for authentication
+  title          String?      // Mr., Ms., Dr.
   firstName      String
   lastName       String
   address        String?      @db.Text
+  imageUrl       String?      // Profile image URL
   role           Role         @default(VOTER)
   
   // Foreign Keys
@@ -70,13 +72,9 @@ model User {
 model Candidate {
   id              Int          @id @default(autoincrement())
   candidateNumber Int          // Number on the ballot paper (e.g. No. 1, No. 2)
-  title           String?      // Mr., Ms., Dr.
-  firstName       String
-  lastName        String
-  imageUrl        String?
   policy          String?      @db.Text
   
-  // Foreign Keys
+  // Foreign Keys - Candidate inherits personal info from User
   userId          Int          @unique // One user can only be one candidate
   user            User         @relation(fields: [userId], references: [id])
   

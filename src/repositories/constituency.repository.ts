@@ -68,6 +68,7 @@ export const findByProvince = async (province: string) => {
 
 /**
  * Get constituency with candidates and votes (for results)
+ * Includes user data since candidate inherits personal info from user
  */
 export const findWithResults = async (id: number) => {
   return await prisma.constituency.findUnique({
@@ -75,6 +76,7 @@ export const findWithResults = async (id: number) => {
     include: {
       candidates: {
         include: {
+          user: true,
           party: true,
           votes: true,
         },

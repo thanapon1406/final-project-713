@@ -92,6 +92,7 @@ export const findAllWithCandidateCount = async () => {
 
 /**
  * Find party by ID with all candidates (for public viewing)
+ * Includes user data since candidate inherits personal info from user
  */
 export const findByIdWithCandidates = async (id: number) => {
   return await prisma.party.findUnique({
@@ -99,6 +100,7 @@ export const findByIdWithCandidates = async (id: number) => {
     include: {
       candidates: {
         include: {
+          user: true,
           constituency: true,
           votes: true,
         },

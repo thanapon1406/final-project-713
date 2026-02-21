@@ -103,6 +103,12 @@ DIRECT_URL="postgresql://user:password@host:port/database"
 # JWT Secret
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 
+# Supabase Storage (for file uploads)
+SUPABASE_URL="https://xxxxx.supabase.co"
+SUPABASE_ANON_KEY="your-anon-public-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+SUPABASE_BUCKET_NAME="image"
+
 # Server
 PORT=3000
 NODE_ENV=development
@@ -195,10 +201,13 @@ src/
 │   ├── admin.service.ts
 │   ├── auth.service.ts
 │   ├── election.service.ts
+│   ├── upload.service.ts    # Shared file upload utilities
 │   └── vote.service.ts
 ├── repositories/       # Database access layer
+│   ├── candidate.repository.ts
+│   ├── constituency.repository.ts
+│   ├── party.repository.ts
 │   ├── user.repository.ts
-│   ├── election.repository.ts
 │   └── vote.repository.ts
 ├── routes/            # API route definitions
 │   ├── admin.routes.ts
@@ -209,7 +218,8 @@ src/
 │   ├── auth.middleware.ts
 │   └── role.middleware.ts
 ├── lib/
-│   └── prisma.ts     # Prisma client instance
+│   ├── prisma.ts     # Prisma client instance
+│   └── supabase.ts   # Supabase client for storage
 └── server.ts          # Express app setup
 
 prisma/
@@ -284,17 +294,24 @@ curl http://localhost:3000/api/votes/ballot/1 \
 | POST   | `/api/auth/register`             | Public       | Register new user   |
 | POST   | `/api/auth/login`                | Public       | User login          |
 | GET    | `/api/auth/me`                   | Any          | View own profile    |
+| POST   | `/api/auth/upload-profile-image` | Any          | Upload profile image|
 | GET    | `/api/admin/users`               | ADMIN        | List all users      |
 | POST   | `/api/admin/constituency`        | ADMIN        | Create constituency |
 | PATCH  | `/api/admin/promote-ec/:userId`  | ADMIN        | Promote to EC       |
 | POST   | `/api/election/party`            | EC           | Create party        |
 | POST   | `/api/election/candidate`        | EC           | Add candidate       |
 | PATCH  | `/api/election/close/:id`        | EC           | Close poll          |
+| POST   | `/api/election/party/:id/logo`   | EC           | Upload party logo   |
 | GET    | `/api/votes/ballot`              | VOTER, EC    | View ballot         |
 | POST   | `/api/votes`                     | VOTER, EC    | Cast vote           |
 | GET    | `/api/election/constituency/:id` | Public       | View results        |
 | GET    | `/api/election/party-overview`   | Public       | View party overview |
 | GET    | `/api/election/constituencies`   | Public       | List constituencies |
+
+**Notes:**
+- File uploads use Supabase Storage bucket `image`.
+- Profile image upload requires authentication; party logo upload is EC-only.
+- Candidate personal info (title, firstName, lastName, imageUrl) comes from the linked User, avoiding duplicate fields on Candidate.
 
 ### 🔐 Authentication Endpoints
 
@@ -394,6 +411,33 @@ Authorization: Bearer <token>
 }
 ```
 
+#### 4. Upload Profile Image
+
+**POST** `/api/auth/upload-profile-image`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:** `multipart/form-data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| file  | File | Image file (jpg, png, gif, webp). Max 5MB |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Upload profile image successful",
+  "data": {
+    "id": 1,
+    "firstName": "John",
+    "lastName": "Doe",
+    "imageUrl": "https://xxxxx.supabase.co/storage/v1/object/public/image/users/uuid.jpg"
+  }
+}
+```
+
 ### 👨‍💼 Admin Endpoints
 
 #### 1. Create Constituency
@@ -447,24 +491,36 @@ Authorization: Bearer <token>
 {
   "userId": 5,
   "candidateNumber": 1,
-  "title": "Mr.",
-  "firstName": "Michael",
-  "lastName": "Johnson",
-  "imageUrl": "https://example.com/photo.jpg",
   "policy": "Personal policies...",
   "partyId": 1,
   "constituencyId": 1
 }
 ```
 
+**Note:** Candidate inherits personal info (title, firstName, lastName, imageUrl) from the linked User. Update the User profile to change candidate's personal info.
+
 **Validations:**
 
 - ✅ Validates user exists
+- ✅ Validates user is not already a candidate
 - ✅ Validates user lives in the specified constituency (residency check)
 - ✅ Validates party exists
 - ✅ Validates constituency exists
+- ✅ Validates candidate number is not already used in the constituency
 
-#### 3. Close Poll
+#### 3. Upload Party Logo
+
+**POST** `/api/election/party/:id/logo`
+
+**Headers:** `Authorization: Bearer <ec-token>`
+
+**Request Body:** `multipart/form-data`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| file  | File | Image file (jpg, png, gif, webp). Max 5MB |
+
+#### 4. Close Poll
 
 **PATCH** `/api/election/close/:id`
 
@@ -857,9 +913,12 @@ model Party {
 model User {
   id             Int          @id @default(autoincrement())
   nationalId     String       @unique
+  laserCode      String?      // Laser code from ID card for authentication
+  title          String?      // Mr., Ms., Dr.
   firstName      String
   lastName       String
   address        String?      @db.Text
+  imageUrl       String?      // Profile image URL
   role           Role         @default(VOTER)
   constituencyId Int
   constituency   Constituency @relation(fields: [constituencyId], references: [id])
@@ -873,14 +932,13 @@ model User {
 ```prisma
 model Candidate {
   id              Int          @id @default(autoincrement())
-  candidateNumber Int
-  title           String?
-  firstName       String
-  lastName        String
-  imageUrl        String?
+  candidateNumber Int          // Number on the ballot paper
   policy          String?      @db.Text
+  
+  // Candidate inherits personal info (title, firstName, lastName, imageUrl) from User
   userId          Int          @unique
   user            User         @relation(fields: [userId], references: [id])
+  
   partyId         Int
   party           Party        @relation(fields: [partyId], references: [id])
   constituencyId  Int
@@ -890,6 +948,8 @@ model Candidate {
   @@unique([constituencyId, candidateNumber])
 }
 ```
+
+**Note:** Personal information for candidates (title, firstName, lastName, imageUrl) is stored in the User model. This design eliminates data redundancy and ensures consistency when updating user profiles.
 
 #### Vote
 
@@ -966,12 +1026,13 @@ model Vote {
 ### 📊 Development Statistics
 
 - **Controllers:** 4 files
-- **Services:** 4 files
-- **Repositories:** 3 files
+- **Services:** 5 files (including upload.service.ts)
+- **Repositories:** 5 files
 - **Routes:** 4 files
 - **Middlewares:** 2 files
-- **API Endpoints:** 13 endpoints
+- **API Endpoints:** 15 endpoints
 - **Database Models:** 5 models
+- **File Storage:** Supabase Storage
 
 ---
 

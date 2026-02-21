@@ -2,6 +2,7 @@
 import { $Enums } from "../generated/prisma";
 import * as userRepo from "../repositories/user.repository";
 import * as constituencyRepo from "../repositories/constituency.repository";
+import { uploadToSupabase, deleteFromSupabase } from "./upload.service";
 
 export class AuthService {
   /**
@@ -78,5 +79,37 @@ export class AuthService {
     }
 
     return user;
+  };
+
+  /**
+   * อัปโหลดรูปโปรไฟล์ผู้ใช้
+   */
+  public uploadProfileImage = async (
+    userId: number,
+    file: Express.Multer.File,
+  ) => {
+    const user = await userRepo.findById(userId);
+
+    if (!user) {
+      throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
+    }
+
+    // Delete old image if exists
+    if (user.imageUrl) {
+      await deleteFromSupabase(user.imageUrl);
+    }
+
+    // Upload new image
+    const imageUrl = await uploadToSupabase(file, "users");
+
+    // Update user with new image URL
+    const updatedUser = await userRepo.update(userId, { imageUrl });
+
+    return {
+      id: updatedUser.id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      imageUrl: updatedUser.imageUrl,
+    };
   };
 }

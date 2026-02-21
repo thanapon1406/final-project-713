@@ -174,4 +174,41 @@ export class AuthController {
       });
     }
   };
+
+  /**
+   * POST /api/auth/upload-profile-image
+   * อัปโหลดรูปโปรไฟล์ผู้ใช้
+   */
+  public uploadProfileImage = async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "กรุณาล็อกอินเข้าสู่ระบบ",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "กรุณาเลือกไฟล์รูปภาพ",
+        });
+      }
+
+      const result = await this.authService.uploadProfileImage(userId, req.file);
+
+      res.status(200).json({
+        success: true,
+        message: "อัปโหลดรูปโปรไฟล์สำเร็จ",
+        data: result,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
 }

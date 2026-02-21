@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller";
 import { authenticate } from "../middlewares/auth.middleware";
+import { uploadImage, handleMulterError } from "../middlewares/upload.middleware";
 
 const router = Router();
 const authController = new AuthController();
@@ -158,5 +159,69 @@ router.post("/login", authController.login);
  *               $ref: '#/components/schemas/Error'
  */
 router.get("/me", authenticate, authController.getProfile);
+
+/**
+ * @swagger
+ * /api/auth/upload-profile-image:
+ *   post:
+ *     summary: Upload user profile image
+ *     description: Upload a profile image for the logged-in user. Image is stored in Supabase Storage. Max file size is 5MB. Accepted formats are jpg, jpeg, png, gif, webp.
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file to upload (max 5MB, jpg/png/gif/webp)
+ *     responses:
+ *       200:
+ *         description: Profile image uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "อัปโหลดรูปโปรไฟล์สำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     firstName:
+ *                       type: string
+ *                       example: "John"
+ *                     lastName:
+ *                       type: string
+ *                       example: "Doe"
+ *                     imageUrl:
+ *                       type: string
+ *                       example: "https://xxx.supabase.co/storage/v1/object/public/image/users/uuid.jpg"
+ *       400:
+ *         description: Invalid file or no file uploaded
+ *       401:
+ *         description: Unauthorized - Please login
+ */
+router.post(
+  "/upload-profile-image",
+  authenticate,
+  uploadImage,
+  handleMulterError,
+  authController.uploadProfileImage,
+);
 
 export default router;

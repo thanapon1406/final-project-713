@@ -101,6 +101,12 @@ DIRECT_URL="postgresql://user:password@host:port/database"
 # JWT Secret
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
 
+# Supabase Storage (สำหรับอัปโหลดไฟล์)
+SUPABASE_URL="https://xxxxx.supabase.co"
+SUPABASE_ANON_KEY="your-anon-public-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+SUPABASE_BUCKET_NAME="image"
+
 # Server
 PORT=3000
 NODE_ENV=development
@@ -193,10 +199,13 @@ src/
 │   ├── admin.service.ts
 │   ├── auth.service.ts
 │   ├── election.service.ts
+│   ├── upload.service.ts    # Shared file upload utilities
 │   └── vote.service.ts
 ├── repositories/       # Database access layer
+│   ├── candidate.repository.ts
+│   ├── constituency.repository.ts
+│   ├── party.repository.ts
 │   ├── user.repository.ts
-│   ├── election.repository.ts
 │   └── vote.repository.ts
 ├── routes/            # API route definitions
 │   ├── admin.routes.ts
@@ -207,7 +216,8 @@ src/
 │   ├── auth.middleware.ts
 │   └── role.middleware.ts
 ├── lib/
-│   └── prisma.ts     # Prisma client instance
+│   ├── prisma.ts     # Prisma client instance
+│   └── supabase.ts   # Supabase client สำหรับ storage
 └── server.ts          # Express app setup
 
 prisma/
@@ -282,17 +292,24 @@ curl http://localhost:3000/api/votes/ballot/1 \
 | POST   | `/api/auth/register`             | Public     | ลงทะเบียนผู้ใช้ใหม่ |
 | POST   | `/api/auth/login`                | Public     | เข้าสู่ระบบ         |
 | GET    | `/api/auth/me`                   | Any        | ดูโปรไฟล์ตนเอง      |
+| POST   | `/api/auth/upload-profile-image` | Any        | อัปโหลดรูปโปรไฟล์   |
 | GET    | `/api/admin/users`               | ADMIN      | ดูรายชื่อผู้ใช้ทั้งหมด |
 | POST   | `/api/admin/constituency`        | ADMIN      | สร้างเขตเลือกตั้ง   |
 | PATCH  | `/api/admin/promote-ec/:userId`  | ADMIN      | เลื่อนเป็น EC       |
 | POST   | `/api/election/party`            | EC         | สร้างพรรค           |
 | POST   | `/api/election/candidate`        | EC         | เพิ่มผู้สมัคร       |
 | PATCH  | `/api/election/close/:id`        | EC         | ปิดหีบ              |
+| POST   | `/api/election/party/:id/logo`   | EC         | อัปโหลดโลโก้พรรค    |
 | GET    | `/api/votes/ballot`              | VOTER, EC  | ดูบัตรเลือกตั้ง     |
 | POST   | `/api/votes`                     | VOTER, EC  | ลงคะแนนเสียง        |
 | GET    | `/api/election/constituency/:id` | Public     | ดูผลเขต             |
 | GET    | `/api/election/party-overview`   | Public     | ดูภาพรวมพรรค        |
 | GET    | `/api/election/constituencies`   | Public     | ดูรายการเขตทั้งหมด  |
+
+**หมายเหตุ:**
+- การอัปโหลดไฟล์ใช้ Supabase Storage bucket `image`.
+- อัปโหลดรูปโปรไฟล์ต้องล็อกอิน ส่วนอัปโหลดโลโก้พรรคใช้สิทธิ์ EC เท่านั้น.
+- ข้อมูลส่วนตัวของผู้สมัคร (title, firstName, lastName, imageUrl) ดึงจาก User ที่เชื่อมโยง ลดการซ้ำข้อมูลบน Candidate.
 
 ### 🔐 Authentication Endpoints
 
@@ -392,6 +409,33 @@ Authorization: Bearer <token>
 }
 ```
 
+#### 4. อัปโหลดรูปโปรไฟล์
+
+**POST** `/api/auth/upload-profile-image`
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Request Body:** `multipart/form-data`
+
+| Field | Type | คำอธิบาย |
+|-------|------|----------|
+| file  | File | ไฟล์รูปภาพ (jpg, png, gif, webp) ขนาดไม่เกิน 5MB |
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "อัปโหลดรูปโปรไฟล์สำเร็จ",
+  "data": {
+    "id": 1,
+    "firstName": "สมชาย",
+    "lastName": "ใจดี",
+    "imageUrl": "https://xxxxx.supabase.co/storage/v1/object/public/image/users/uuid.jpg"
+  }
+}
+```
+
 ### 👨‍💼 Admin Endpoints
 
 #### 1. สร้างเขตเลือกตั้ง
@@ -445,24 +489,36 @@ Authorization: Bearer <token>
 {
   "userId": 5,
   "candidateNumber": 1,
-  "title": "นาย",
-  "firstName": "ธนวัฒน์",
-  "lastName": "พงศ์พันธ์",
-  "imageUrl": "https://example.com/photo.jpg",
   "policy": "นโยบายส่วนตัว...",
   "partyId": 1,
   "constituencyId": 1
 }
 ```
 
+**หมายเหตุ:** ผู้สมัครจะใช้ข้อมูลส่วนตัว (title, firstName, lastName, imageUrl) จาก User ที่เชื่อมโยง หากต้องการแก้ไขข้อมูลผู้สมัคร ให้อัปเดตที่โปรไฟล์ User แทน
+
 **การตรวจสอบ:**
 
 - ✅ ตรวจสอบว่าผู้ใช้มีอยู่จริง
+- ✅ ตรวจสอบว่าผู้ใช้ยังไม่ได้เป็นผู้สมัครอยู่แล้ว
 - ✅ ตรวจสอบว่าผู้ใช้อาศัยอยู่ในเขตเลือกตั้งที่ระบุ
 - ✅ ตรวจสอบว่าพรรคมีอยู่จริง
 - ✅ ตรวจสอบว่าเขตเลือกตั้งมีอยู่จริง
+- ✅ ตรวจสอบว่าหมายเลขผู้สมัครไม่ซ้ำในเขต
 
-#### 3. ปิดหีบเลือกตั้ง
+#### 3. อัปโหลดโลโก้พรรค
+
+**POST** `/api/election/party/:id/logo`
+
+**Headers:** `Authorization: Bearer <ec-token>`
+
+**Request Body:** `multipart/form-data`
+
+| Field | Type | คำอธิบาย |
+|-------|------|----------|
+| file  | File | ไฟล์รูปภาพ (jpg, png, gif, webp) ขนาดไม่เกิน 5MB |
+
+#### 4. ปิดหีบเลือกตั้ง
 
 **PATCH** `/api/election/close/:id`
 
@@ -855,9 +911,12 @@ model Party {
 model User {
   id             Int          @id @default(autoincrement())
   nationalId     String       @unique
+  laserCode      String?      // รหัสเลเซอร์หลังบัตรสำหรับยืนยันตัวตน
+  title          String?      // นาย, นาง, นางสาว, ดร.
   firstName      String
   lastName       String
   address        String?      @db.Text
+  imageUrl       String?      // URL รูปโปรไฟล์
   role           Role         @default(VOTER)
   constituencyId Int
   constituency   Constituency @relation(fields: [constituencyId], references: [id])
@@ -871,14 +930,13 @@ model User {
 ```prisma
 model Candidate {
   id              Int          @id @default(autoincrement())
-  candidateNumber Int
-  title           String?
-  firstName       String
-  lastName        String
-  imageUrl        String?
+  candidateNumber Int          // หมายเลขผู้สมัครบนบัตรเลือกตั้ง
   policy          String?      @db.Text
+  
+  // ผู้สมัครใช้ข้อมูลส่วนตัว (title, firstName, lastName, imageUrl) จาก User
   userId          Int          @unique
   user            User         @relation(fields: [userId], references: [id])
+  
   partyId         Int
   party           Party        @relation(fields: [partyId], references: [id])
   constituencyId  Int
@@ -888,6 +946,8 @@ model Candidate {
   @@unique([constituencyId, candidateNumber])
 }
 ```
+
+**หมายเหตุ:** ข้อมูลส่วนตัวของผู้สมัคร (title, firstName, lastName, imageUrl) เก็บไว้ใน User model การออกแบบนี้ช่วยลดข้อมูลซ้ำซ้อนและรักษาความสอดคล้องเมื่ออัปเดตโปรไฟล์ผู้ใช้
 
 #### Vote (การลงคะแนน)
 
@@ -962,12 +1022,13 @@ model Vote {
 ### 📊 สถิติการพัฒนา
 
 - **Controllers:** 4 ไฟล์
-- **Services:** 4 ไฟล์
-- **Repositories:** 3 ไฟล์
+- **Services:** 5 ไฟล์ (รวม upload.service.ts)
+- **Repositories:** 5 ไฟล์
 - **Routes:** 4 ไฟล์
 - **Middlewares:** 2 ไฟล์
-- **API Endpoints:** 13 endpoints
+- **API Endpoints:** 15 endpoints
 - **Database Models:** 5 models
+- **File Storage:** Supabase Storage
 
 ---
 

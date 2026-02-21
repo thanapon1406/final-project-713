@@ -306,6 +306,11 @@ curl http://localhost:3000/api/votes/ballot/1 \
 | GET    | `/api/election/party-overview`   | Public     | ดูภาพรวมพรรค        |
 | GET    | `/api/election/constituencies`   | Public     | ดูรายการเขตทั้งหมด  |
 
+**หมายเหตุ:**
+- การอัปโหลดไฟล์ใช้ Supabase Storage bucket `image`.
+- อัปโหลดรูปโปรไฟล์ต้องล็อกอิน ส่วนอัปโหลดโลโก้พรรคใช้สิทธิ์ EC เท่านั้น.
+- ข้อมูลส่วนตัวของผู้สมัคร (title, firstName, lastName, imageUrl) ดึงจาก User ที่เชื่อมโยง ลดการซ้ำข้อมูลบน Candidate.
+
 ### 🔐 Authentication Endpoints
 
 #### 1. ลงทะเบียน

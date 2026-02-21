@@ -308,6 +308,11 @@ curl http://localhost:3000/api/votes/ballot/1 \
 | GET    | `/api/election/party-overview`   | Public       | View party overview |
 | GET    | `/api/election/constituencies`   | Public       | List constituencies |
 
+**Notes:**
+- File uploads use Supabase Storage bucket `image`.
+- Profile image upload requires authentication; party logo upload is EC-only.
+- Candidate personal info (title, firstName, lastName, imageUrl) comes from the linked User, avoiding duplicate fields on Candidate.
+
 ### 🔐 Authentication Endpoints
 
 #### 1. Register

@@ -89,6 +89,8 @@ model Candidate {
 
   // Constraint: Candidate Number must be unique within that specific constituency
   @@unique([constituencyId, candidateNumber])
+  // Constraint: One party can have only one candidate per constituency
+  @@unique([constituencyId, partyId])
 }
 
 // --------------------------------------

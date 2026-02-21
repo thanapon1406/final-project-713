@@ -5,14 +5,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL || "";
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || "";
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseServiceKey) {
   console.warn(
-    "Warning: SUPABASE_URL or SUPABASE_ANON_KEY is not set. File uploads will not work.",
+    "Warning: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set. File uploads will not work.",
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export const BUCKET_NAME = process.env.SUPABASE_BUCKET_NAME || "image";

@@ -143,6 +143,7 @@ export const update = async (
     firstName?: string;
     lastName?: string;
     address?: string;
+    imageUrl?: string;
     constituencyId?: number;
   },
 ) => {

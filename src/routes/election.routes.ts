@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ElectionController } from "../controllers/election.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 import { authorize } from "../middlewares/role.middleware";
+import { uploadImage, handleMulterError } from "../middlewares/upload.middleware";
 
 const router = Router();
 const electionController = new ElectionController();
@@ -891,6 +892,79 @@ router.get(
   authenticate,
   authorize("EC"),
   electionController.getAllProvinces,
+);
+
+// --- EC UPLOAD ---
+
+/**
+ * @swagger
+ * /api/election/party/{id}/logo:
+ *   post:
+ *     summary: Upload party logo (EC only)
+ *     description: Upload a logo for a political party. Image is stored in Supabase Storage. Max file size is 5MB. Accepted formats are jpg, jpeg, png, gif, webp.
+ *     tags: [Election]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Party ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *                 description: Logo image file to upload (max 5MB, jpg/png/gif/webp)
+ *     responses:
+ *       200:
+ *         description: Party logo uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "อัปโหลดโลโก้พรรคสำเร็จ"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       example: "Democratic Party"
+ *                     logoUrl:
+ *                       type: string
+ *                       example: "https://xxx.supabase.co/storage/v1/object/public/image/parties/uuid.png"
+ *       400:
+ *         description: Invalid file, no file uploaded, or party not found
+ *       401:
+ *         description: Unauthorized - Please login
+ *       403:
+ *         description: Forbidden - EC role required
+ */
+router.post(
+  "/party/:id/logo",
+  authenticate,
+  authorize("EC"),
+  uploadImage,
+  handleMulterError,
+  electionController.uploadPartyLogo,
 );
 
 export default router;

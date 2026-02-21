@@ -31,11 +31,13 @@ export const findById = async (id: number) => {
 
 /**
  * Find all candidates in a constituency
+ * Includes user data since candidate inherits personal info from user
  */
 export const findByConstituency = async (constituencyId: number) => {
   return await prisma.candidate.findMany({
     where: { constituencyId },
     include: {
+      user: true,
       party: true,
       votes: true,
     },
@@ -97,15 +99,12 @@ export const findByUserId = async (userId: number) => {
 
 /**
  * Update candidate
+ * Note: Personal info (title, firstName, lastName, imageUrl) is managed through User entity
  */
 export const update = async (
   id: number,
   data: {
     candidateNumber?: number;
-    title?: string;
-    firstName?: string;
-    lastName?: string;
-    imageUrl?: string;
     policy?: string;
     partyId?: number;
   },

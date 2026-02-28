@@ -1,5 +1,6 @@
 // src/services/upload.service.ts
-import { supabase, BUCKET_NAME } from "../lib/supabase";
+import { DeleteObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { BUCKET_NAME, s3Client, SUPABASE_PUBLIC_BASE_URL } from "../lib/s3";
 
 /**
  * Generate unique filename with UUID
@@ -20,25 +21,26 @@ export const uploadToSupabase = async (
   file: Express.Multer.File,
   folder: string,
 ): Promise<string> => {
-  const fileName = generateFileName(folder, file.originalname);
+  const fileKey = generateFileName(folder, file.originalname);
 
-  const { data, error } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(fileName, file.buffer, {
-      contentType: file.mimetype,
-      upsert: false,
-    });
-
-  if (error) {
-    throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ: ${error.message}`);
+  try {
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: fileKey,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      }),
+    );
+  } catch (error: any) {
+    throw new Error(`อัปโหลดไฟล์ไม่สำเร็จ: ${error?.message || "Unknown error"}`);
   }
 
-  // Get public URL
-  const { data: urlData } = supabase.storage
-    .from(BUCKET_NAME)
-    .getPublicUrl(data.path);
+  if (!SUPABASE_PUBLIC_BASE_URL) {
+    throw new Error("ไม่พบ SUPABASE_PUBLIC_BASE_URL สำหรับสร้าง public URL");
+  }
 
-  return urlData.publicUrl;
+  return `${SUPABASE_PUBLIC_BASE_URL}/${BUCKET_NAME}/${fileKey}`;
 };
 
 /**
@@ -47,12 +49,17 @@ export const uploadToSupabase = async (
 export const deleteFromSupabase = async (imageUrl: string): Promise<void> => {
   try {
     // Extract file path from URL
-    const urlParts = imageUrl.split(`${BUCKET_NAME}/`);
+    const urlParts = imageUrl.split(`/${BUCKET_NAME}/`);
     if (urlParts.length < 2) return;
 
-    const filePath = urlParts[1];
+    const filePath = urlParts[1].split("?")[0];
 
-    await supabase.storage.from(BUCKET_NAME).remove([filePath]);
+    await s3Client.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: filePath,
+      }),
+    );
   } catch (error) {
     // Log but don't throw - deletion failure shouldn't break the flow
     console.error("Failed to delete old image:", error);

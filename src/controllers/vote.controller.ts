@@ -130,4 +130,63 @@ export class VoteController {
       });
     }
   };
+
+  /**
+   * GET /api/votes/results
+   * ดูผลการเลือกตั้งตามเขตที่เลือก (เลือกได้ทุกเขต)
+   */
+  getResultsByConstituency = async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "กรุณาล็อกอินเข้าสู่ระบบ",
+        });
+      }
+
+      const { province, districtNumber } = req.query;
+
+      const result = await this.voteService.getResultsByFilter(
+        userId,
+        typeof province === "string" ? province : undefined,
+        districtNumber ? parseInt(districtNumber as string) : undefined,
+      );
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
+
+  /**
+   * GET /api/votes/constituencies
+   * ดึงรายการจังหวัดและเขตทั้งหมด (สำหรับ filter หน้ารายงานผล)
+   */
+  getAllConstituencies = async (req: AuthRequest, res: Response) => {
+    try {
+      const { province } = req.query;
+
+      const result = await this.voteService.getConstituenciesList(
+        typeof province === "string" ? province : undefined,
+      );
+
+      res.status(200).json({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  };
 }

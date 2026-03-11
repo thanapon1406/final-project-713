@@ -140,6 +140,7 @@ export const findByRole = async (role: "VOTER" | "EC" | "ADMIN") => {
 export const update = async (
   id: number,
   data: {
+    title?: string;
     firstName?: string;
     lastName?: string;
     address?: string;

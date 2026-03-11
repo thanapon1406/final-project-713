@@ -261,4 +261,67 @@ router.get(
   voteController.getMyConstituencyResults,
 );
 
+/**
+ * @swagger
+ * /api/votes/results:
+ *   get:
+ *     summary: Get election results by constituency filter
+ *     description: Returns election results for a selected constituency. Users can filter by province and districtNumber. If no filter is provided, defaults to user's own constituency.
+ *     tags: [Vote]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: province
+ *         schema:
+ *           type: string
+ *         description: Province name to filter
+ *       - in: query
+ *         name: districtNumber
+ *         schema:
+ *           type: integer
+ *         description: District number to filter
+ *     responses:
+ *       200:
+ *         description: Results retrieved successfully
+ *       400:
+ *         description: Constituency not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  "/results",
+  authenticate,
+  authorize("VOTER", "EC"),
+  voteController.getResultsByConstituency,
+);
+
+/**
+ * @swagger
+ * /api/votes/constituencies:
+ *   get:
+ *     summary: Get list of all provinces and constituencies (for filter dropdown)
+ *     description: Returns all provinces and constituencies for the results filter UI. Optionally filter by province.
+ *     tags: [Vote]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: province
+ *         schema:
+ *           type: string
+ *         description: Province name to filter constituencies
+ *     responses:
+ *       200:
+ *         description: Constituencies retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  "/constituencies",
+  authenticate,
+  authorize("VOTER", "EC"),
+  voteController.getAllConstituencies,
+);
+
 export default router;

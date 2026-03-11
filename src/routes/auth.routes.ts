@@ -162,6 +162,44 @@ router.get("/me", authenticate, authController.getProfile);
 
 /**
  * @swagger
+ * /api/auth/profile:
+ *   put:
+ *     summary: Update own profile
+ *     description: Allows the logged-in user to update their own profile data (title, firstName, lastName, address).
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 example: "นาย"
+ *               firstName:
+ *                 type: string
+ *                 example: "John"
+ *               lastName:
+ *                 type: string
+ *                 example: "Doe"
+ *               address:
+ *                 type: string
+ *                 example: "123 Main Street"
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ */
+router.put("/profile", authenticate, authController.updateProfile);
+
+/**
+ * @swagger
  * /api/auth/upload-profile-image:
  *   post:
  *     summary: Upload user profile image

@@ -82,6 +82,29 @@ export class AuthService {
   };
 
   /**
+   * แก้ไขข้อมูลผู้ใช้ (ตัวเอง)
+   */
+  public updateProfile = async (
+    userId: number,
+    data: {
+      title?: string;
+      firstName?: string;
+      lastName?: string;
+      address?: string;
+    },
+  ) => {
+    const user = await userRepo.findById(userId);
+
+    if (!user) {
+      throw new Error(`ไม่พบผู้ใช้ ID: ${userId}`);
+    }
+
+    const updatedUser = await userRepo.update(userId, data);
+
+    return updatedUser;
+  };
+
+  /**
    * อัปโหลดรูปโปรไฟล์ผู้ใช้
    */
   public uploadProfileImage = async (

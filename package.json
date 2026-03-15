@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/app.js",
-    "build": "prisma generate && tsc",
+    "start": "node dist/server.js",
+    "build": "prisma generate && tsc && mkdir -p dist/generated && cp -R src/generated/prisma dist/generated/",
     "dev": "nodemon",
     "seed": "tsx prisma/seed.ts",
     "prisma:push": "npx prisma db push",
-    "prisma:generate": "npx prisma generate"
+    "prisma:generate": "npx prisma generate",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",

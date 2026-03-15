@@ -11,6 +11,7 @@ export class AuthService {
   public registerUser = async (
     nationalId: string,
     laserCode: string,
+    title: string | undefined,
     firstName: string,
     lastName: string,
     address: string,
@@ -38,6 +39,7 @@ export class AuthService {
     const user = await userRepo.create({
       nationalId,
       laserCode,
+      title,
       firstName,
       lastName,
       address,

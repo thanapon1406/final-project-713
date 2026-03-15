@@ -16,6 +16,7 @@ export class AuthController {
       const {
         nationalId,
         laserCode,
+        title,
         firstName,
         lastName,
         address,
@@ -43,6 +44,7 @@ export class AuthController {
       const newUser = await this.authService.registerUser(
         nationalId,
         laserCode,
+        title,
         firstName,
         lastName,
         address,
@@ -69,6 +71,7 @@ export class AuthController {
           user: {
             id: newUser.id,
             nationalId: newUser.nationalId,
+            title: newUser.title,
             firstName: newUser.firstName,
             lastName: newUser.lastName,
             role: newUser.role,
@@ -121,6 +124,7 @@ export class AuthController {
           user: {
             id: user.id,
             nationalId: user.nationalId,
+            title: user.title,
             firstName: user.firstName,
             lastName: user.lastName,
             role: user.role,
@@ -161,6 +165,7 @@ export class AuthController {
         data: {
           id: user.id,
           nationalId: user.nationalId,
+          title: user.title,
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,

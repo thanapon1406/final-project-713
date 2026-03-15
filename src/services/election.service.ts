@@ -207,6 +207,7 @@ export class ElectionService {
         name: party.name,
         logoUrl: party.logoUrl,
         policy: party.policy,
+        totalCandidates: party.candidates.length,
         totalElectedMPs,
       };
     });

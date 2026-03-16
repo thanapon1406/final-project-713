@@ -168,6 +168,8 @@ export class AuthController {
           title: user.title,
           firstName: user.firstName,
           lastName: user.lastName,
+          address: user.address,
+          imageUrl: user.imageUrl,
           role: user.role,
           constituency: user.constituency,
         },

@@ -20,6 +20,7 @@ export class AuthController {
         firstName,
         lastName,
         address,
+        imageUrl,
         province,
         districtNumber,
       } = req.body;
@@ -48,6 +49,7 @@ export class AuthController {
         firstName,
         lastName,
         address,
+        imageUrl,
         province,
         parseInt(districtNumber),
       );
@@ -74,6 +76,7 @@ export class AuthController {
             title: newUser.title,
             firstName: newUser.firstName,
             lastName: newUser.lastName,
+            imageUrl: newUser.imageUrl,
             role: newUser.role,
             constituency: newUser.constituency,
           },
@@ -197,13 +200,14 @@ export class AuthController {
         });
       }
 
-      const { title, firstName, lastName, address } = req.body;
+      const { title, firstName, lastName, address, imageUrl } = req.body;
 
       const user = await this.authService.updateProfile(userId, {
         title,
         firstName,
         lastName,
         address,
+        imageUrl,
       });
 
       res.status(200).json({

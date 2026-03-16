@@ -44,6 +44,10 @@ const authController = new AuthController();
  *               address:
  *                 type: string
  *                 example: "123 Main Street"
+ *               imageUrl:
+ *                 type: string
+ *                 example: "https://your-project.supabase.co/storage/v1/object/public/users/profile-123.jpg"
+ *                 description: Optional pre-uploaded profile image URL
  *               province:
  *                 type: string
  *                 example: "Bangkok"
@@ -165,7 +169,7 @@ router.get("/me", authenticate, authController.getProfile);
  * /api/auth/profile:
  *   put:
  *     summary: Update own profile
- *     description: Allows the logged-in user to update their own profile data (title, firstName, lastName, address).
+ *     description: Allows the logged-in user to update their own profile data (title, firstName, lastName, address, imageUrl).
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -188,6 +192,9 @@ router.get("/me", authenticate, authController.getProfile);
  *               address:
  *                 type: string
  *                 example: "123 Main Street"
+ *               imageUrl:
+ *                 type: string
+ *                 example: "https://your-project.supabase.co/storage/v1/object/public/users/profile-123.jpg"
  *     responses:
  *       200:
  *         description: Profile updated successfully

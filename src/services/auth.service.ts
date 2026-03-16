@@ -15,6 +15,7 @@ export class AuthService {
     firstName: string,
     lastName: string,
     address: string,
+    imageUrl: string | undefined,
     province: string,
     districtNumber: number,
   ) => {
@@ -43,6 +44,7 @@ export class AuthService {
       firstName,
       lastName,
       address,
+      imageUrl,
       role: $Enums.Role.VOTER,
       constituency: {
         connect: { id: constituency.id },
@@ -93,6 +95,7 @@ export class AuthService {
       firstName?: string;
       lastName?: string;
       address?: string;
+      imageUrl?: string;
     },
   ) => {
     const user = await userRepo.findById(userId);

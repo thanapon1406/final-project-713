@@ -119,12 +119,37 @@ export class ElectionService {
   };
 
   /**
-   * ดึงรายการเขตเลือกตั้งทั้งหมด หรือกรองตามจังหวัด
+   * ดึงรายการเขตเลือกตั้งทั้งหมด หรือกรองตาม provinceId (+ districtNumber)
    */
-  public getConstituencies = async (filters?: { province?: string }) => {
-    if (filters?.province) {
-      return await constituencyRepo.findByProvince(filters.province);
+  public getConstituencies = async (filters?: {
+    provinceId?: number;
+    districtNumber?: number;
+  }) => {
+    if (filters?.provinceId !== undefined) {
+      const allConstituencies = await constituencyRepo.findAll();
+      const provinces = [...new Set(allConstituencies.map((c) => c.province))].sort();
+      const province = provinces[filters.provinceId - 1];
+
+      if (!province) {
+        throw new Error(`ไม่พบจังหวัดจาก provinceId: ${filters.provinceId}`);
+      }
+
+      if (filters.districtNumber !== undefined) {
+        const constituency = await constituencyRepo.findByLocation(
+          province,
+          filters.districtNumber,
+        );
+
+        if (!constituency) {
+          return [];
+        }
+
+        return [constituency];
+      }
+
+      return await constituencyRepo.findByProvince(province);
     }
+
     return await constituencyRepo.findAll();
   };
 
@@ -168,10 +193,35 @@ export class ElectionService {
   /**
    * ดูภาพรวมพรรคทั้งหมด พร้อมจำนวน MPs
    */
-  public getPartyOverview = async () => {
+  public getPartyOverview = async (filters?: {
+    provinceId?: number;
+    districtNumber?: number;
+  }) => {
     const parties = await partyRepo.findAllWithCandidates();
     const allConstituencies = await constituencyRepo.findAll();
-    const closedConstituencyIds = allConstituencies
+    let scopedConstituencies = allConstituencies;
+
+    if (filters?.provinceId !== undefined) {
+      const provinces = [...new Set(allConstituencies.map((c) => c.province))].sort();
+      const province = provinces[filters.provinceId - 1];
+
+      if (!province) {
+        throw new Error(`ไม่พบจังหวัดจาก provinceId: ${filters.provinceId}`);
+      }
+
+      if (filters.districtNumber !== undefined) {
+        scopedConstituencies = allConstituencies.filter(
+          (c) =>
+            c.province === province && c.districtNumber === filters.districtNumber,
+        );
+      } else {
+        scopedConstituencies = allConstituencies.filter(
+          (c) => c.province === province,
+        );
+      }
+    }
+
+    const closedConstituencyIds = scopedConstituencies
       .filter((c) => c.isClosed)
       .map((c) => c.id);
 

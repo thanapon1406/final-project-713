@@ -140,7 +140,43 @@ export class ElectionController {
    */
   getPartyOverview = async (req: Request, res: Response) => {
     try {
-      const parties = await this.electionService.getPartyOverview();
+      const { provinceId, districtNumber } = req.query;
+
+      const parsedProvinceId =
+        typeof provinceId === "string" ? parseInt(provinceId) : undefined;
+      const parsedDistrictNumber =
+        typeof districtNumber === "string"
+          ? parseInt(districtNumber)
+          : undefined;
+
+      if (parsedProvinceId !== undefined && isNaN(parsedProvinceId)) {
+        return res.status(400).json({
+          success: false,
+          message: "provinceId ต้องเป็นตัวเลข",
+        });
+      }
+
+      if (
+        parsedDistrictNumber !== undefined &&
+        isNaN(parsedDistrictNumber)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "districtNumber ต้องเป็นตัวเลข",
+        });
+      }
+
+      if (parsedDistrictNumber !== undefined && parsedProvinceId === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: "กรุณาระบุ provinceId เมื่อส่ง districtNumber",
+        });
+      }
+
+      const parties = await this.electionService.getPartyOverview({
+        provinceId: parsedProvinceId,
+        districtNumber: parsedDistrictNumber,
+      });
 
       res.status(200).json({
         success: true,
@@ -160,10 +196,42 @@ export class ElectionController {
    */
   getAllConstituencies = async (req: Request, res: Response) => {
     try {
-      const { province } = req.query;
+      const { provinceId, districtNumber } = req.query;
+
+      const parsedProvinceId =
+        typeof provinceId === "string" ? parseInt(provinceId) : undefined;
+      const parsedDistrictNumber =
+        typeof districtNumber === "string"
+          ? parseInt(districtNumber)
+          : undefined;
+
+      if (parsedProvinceId !== undefined && isNaN(parsedProvinceId)) {
+        return res.status(400).json({
+          success: false,
+          message: "provinceId ต้องเป็นตัวเลข",
+        });
+      }
+
+      if (
+        parsedDistrictNumber !== undefined &&
+        isNaN(parsedDistrictNumber)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "districtNumber ต้องเป็นตัวเลข",
+        });
+      }
+
+      if (parsedDistrictNumber !== undefined && parsedProvinceId === undefined) {
+        return res.status(400).json({
+          success: false,
+          message: "กรุณาระบุ provinceId เมื่อส่ง districtNumber",
+        });
+      }
 
       const constituencies = await this.electionService.getConstituencies({
-        province: typeof province === "string" ? province : undefined,
+        provinceId: parsedProvinceId,
+        districtNumber: parsedDistrictNumber,
       });
 
       res.status(200).json({

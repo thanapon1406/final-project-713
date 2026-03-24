@@ -242,8 +242,21 @@ router.get("/constituency/:id", electionController.getConstituencyData);
  * /api/election/party-overview:
  *   get:
  *     summary: View all parties and their elected MP count (Public)
- *     description: Shows all parties with count of their MPs elected in closed constituencies
+ *     description: Shows party overview from closed constituencies. Supports filters: no query = all, provinceId = one province, provinceId + districtNumber = one constituency.
  *     tags: [Election]
+ *     parameters:
+ *       - in: query
+ *         name: provinceId
+ *         schema:
+ *           type: integer
+ *         description: Province index from GET /api/election/provinces (1-based)
+ *         example: 1
+ *       - in: query
+ *         name: districtNumber
+ *         schema:
+ *           type: integer
+ *         description: District number within the province (requires provinceId)
+ *         example: 3
  *     responses:
  *       200:
  *         description: Party overview retrieved successfully
@@ -277,16 +290,22 @@ router.get("/party-overview", electionController.getPartyOverview);
  * @swagger
  * /api/election/constituencies:
  *   get:
- *     summary: Get all constituencies or filter by province (Public)
- *     description: Returns list of all constituencies. Can be filtered by province using query parameter.
+ *     summary: Get all constituencies or filter by provinceId (+ optional districtNumber) (Public)
+ *     description: Returns all constituencies. Supports these filters: no query = all, provinceId = all districts in that province, provinceId + districtNumber = one specific district.
  *     tags: [Election]
  *     parameters:
  *       - in: query
- *         name: province
+ *         name: provinceId
  *         schema:
- *           type: string
- *         description: Filter constituencies by province name
- *         example: Bangkok
+ *           type: integer
+ *         description: Province index from GET /api/election/provinces (1-based)
+ *         example: 1
+ *       - in: query
+ *         name: districtNumber
+ *         schema:
+ *           type: integer
+ *         description: District number within the province (requires provinceId)
+ *         example: 3
  *     responses:
  *       200:
  *         description: Constituencies retrieved successfully
